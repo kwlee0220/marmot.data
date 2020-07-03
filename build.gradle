@@ -1,0 +1,152 @@
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'com.google.protobuf'
+
+buildscript {
+	repositories {
+		mavenLocal()
+		jcenter()
+	}
+	dependencies {
+		classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.7'
+	}
+}
+
+group = 'etri'
+version = '20.05.15'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+[compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
+
+sourceSets {
+	main {
+		java {
+			srcDirs 'src/main/antlr/generated'
+			srcDirs 'build/generated/source/proto/main/grpc'
+			srcDirs 'build/generated/source/proto/main/java'
+		}
+	}
+}
+
+repositories {
+    mavenLocal()
+	jcenter()
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.5.1-1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.16.1'
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+ext {
+	jts_version = '1.14.0'
+	avro_version = '1.9.2'
+	snappy_java_version = '1.1.7.5'
+	antlr4_version = '4.7'
+	postgis_jdbc_version = '2.2.1'
+	
+	grpc_version = '1.23.0'
+	protobuf_version = '3.9.1'
+	
+	junit_version = '4.12'
+	mockito_version = '3.2.4'
+	hamcrest_version = '1.3'
+}
+
+dependencies {
+	compile project(":utils")
+	compile project(":utils.grpc")
+	
+	// JTS
+	api "com.vividsolutions:jts-core:${jts_version}"
+	
+	// Avro
+	api "org.apache.avro:avro:${avro_version}"
+	implementation "org.xerial.snappy:snappy-java:${snappy_java_version}"
+	
+	// ANTLR
+	implementation "org.antlr:antlr4-runtime:${antlr4_version}"
+	
+	// PostSQL
+//	compile "org.postgresql:postgresql:${postgresql_version}"
+	implementation "net.postgis:postgis-jdbc:${postgis_jdbc_version}"
+	
+	// grpc
+	implementation "io.grpc:grpc-netty-shaded:${grpc_version}"
+	implementation "io.grpc:grpc-protobuf:${grpc_version}"
+	implementation "io.grpc:grpc-stub:${grpc_version}"
+	implementation "com.google.protobuf:protobuf-java-util:${protobuf_version}"
+	
+	testImplementation "junit:junit:${junit_version}"
+	testImplementation "org.mockito:mockito-core:${mockito_version}"
+	testImplementation "org.hamcrest:hamcrest-all:${hamcrest_version}"
+}
+
+task sourceJar(type: Jar) {
+	classifier 'sources'
+	from sourceSets.main.allSource
+}
+task javadocJar(type: Jar) {
+	classifier 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives sourceJar
+	archives javadocJar
+}
+
+publishing {
+	publications {
+		commonGrpc(MavenPublication) {
+			from components.java
+			
+			artifact sourceJar
+			artifact javadocJar
+		}
+	}
+}
+
+apply plugin: 'eclipse'
+eclipse {
+	classpath {
+		file {
+			withXml {
+				def node = it.asNode()
+				node.appendNode('classpathentry', [kind: 'output', path: 'classes'])
+			}
+			
+			whenMerged { cp ->
+				Map entryByPath = cp.entries.groupBy { entry -> entry.path }
+				entryByPath.each { key, values ->
+					if ( values.size() > 1 ) {
+            			def entry = values.first()
+            			if ( entry.kind == 'src' ) {
+            				entry.includes = []
+            				entry.excludes = []
+            			}
+            			int index = cp.entries.indexOf entry
+            			cp.entries.removeAll values
+            			cp.entries.add index, entry
+					}
+				}
+				cp.entries.each { entry ->
+					if ( entry.kind == 'src' && entry.hasProperty('output') ) {
+						entry.output = 'classes'
+					}
+				}
+			}
+		}
+	}
+}

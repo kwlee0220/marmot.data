@@ -1,0 +1,332 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "proto.dataset";
+
+package proto.dataset;
+
+import public "base.proto";
+import public "stream.proto";
+
+
+service DataSetService {
+/*
+	rpc createDataSet(CreateDataSetRequest) returns (DataSetInfoResponse);
+	rpc bindDataSet(BindDataSetRequest) returns (DataSetInfoResponse);
+	rpc buildDataSet(BuildDataSetRequest) returns (DataSetInfoResponse);
+	// ReadDataSetRequest
+*/
+	rpc readDataSet(stream proto.stream.UpMessage) returns (stream proto.stream.DownMessage);
+/*
+	// QueryRangeRequest
+	rpc queryRange(stream DownChunkResponse) returns (stream DownChunkRequest);
+	// AppendRecordSetRequest
+	rpc appendRecordSet(stream UpChunkRequest) returns (stream UpChunkResponse);
+//	rpc appendPlanResult(AppendPlanResultRequest) returns (DataSetInfoResponse);
+	rpc deleteDataSet(marmot.proto.StringProto) returns (BoolResponse);
+	rpc moveDataSet(MoveDataSetRequest) returns (VoidResponse);
+	rpc createSpatialIndex(CreateSpatialIndexRequest) returns (SpatialIndexInfoResponse);
+	rpc deleteSpatialIndex(marmot.proto.StringProto) returns (VoidResponse);
+	
+	rpc getDataSetInfoAll(marmot.proto.VoidProto) returns (stream DataSetInfoResponse);
+*/
+	rpc getDataSetInfo(StringProto) returns (DataSetInfoResponse);
+/*
+	rpc getDataSetInfoAllInDir(DirectoryTraverseRequest) returns (stream DataSetInfoResponse);
+	rpc getDefaultSpatialIndexInfo(marmot.proto.StringProto) returns (SpatialIndexInfoResponse);
+	rpc updateGeometryColumnInfo(UpdateGeometryColumnInfoRequest) returns (DataSetInfoResponse);
+	
+	//
+	// DataSet Directory related interface
+	//
+	rpc getDirAll(VoidProto) returns (stream StringResponse);
+	rpc getSubDirAll(DirectoryTraverseRequest) returns (stream StringResponse);
+	rpc getParentDir(StringProto) returns (StringResponse);
+	rpc moveDir(MoveDirRequest) returns (VoidResponse);
+	rpc deleteDir(StringProto) returns (VoidResponse);
+	
+	rpc getClusterQuadKeyAll(marmot.proto.StringProto) returns (stream StringResponse);
+	rpc estimateQuadKeys(EstimateQuadKeysRequest) returns (stream StringResponse);
+	rpc clusterSpatially(ClusterSpatiallyRequest) returns (VoidResponse);
+	
+	//
+	// Visualization interface
+	//
+	rpc estimateRangeQuery(EstimateRangeQueryRequest) returns (RangeQueryEstimateResponse);
+	// 주어진 식별자에 해당하는 공간 클러스터에 포함된 레코드들을 반환 (ReadRawSpatialClusterRequest)
+	rpc readRawSpatialCluster(stream DownChunkResponse) returns (stream DownChunkRequest);
+	
+	rpc hasThumbnail(StringProto) returns (BoolResponse);
+	rpc createThumbnail(CreateThumbnailRequest) returns (VoidResponse);
+	rpc deleteThumbnail(StringProto) returns (BoolResponse);
+	rpc readThumbnail(stream DownChunkResponse) returns (stream DownChunkRequest);
+	rpc getThumbnailRatio(StringProto) returns (FloatResponse);
+	
+	// Misc interface
+	rpc getBlockSize(StringProto) returns (LongResponse);
+	rpc getDataSetLength(marmot.proto.StringProto) returns (LongResponse);
+	
+	rpc createKafkaTopic(CreateKafkaTopicRequest) returns (VoidResponse);
+*/
+}
+
+/*
+message CreateThumbnailRequest {
+	string id = 1;				// 데이터세트 식별자
+	int32 count = 2;
+}
+
+message ReadThumbnailRequest {
+	string id = 1;				// 데이터세트 식별자
+	EnvelopeProto range = 2;
+	int32 count = 3;
+	bool use_compression = 4;	// 데이터 송수신할 때 압축사용 여부
+}
+*/
+
+enum DataSetTypeProto {
+	FILE = 0;
+}
+
+message DataSetInfoProto {
+	string record_schema = 1; 	// 데이터세트 컬럼 정보
+}
+
+message DataSetInfoResponse {
+	oneof either {
+		DataSetInfoProto dataset_info = 1;
+		ErrorProto error = 2;
+	}
+}
+/*
+message CreateDataSetOptionsProto {
+	DataSetTypeProto type = 1;
+	oneof optional_geom_col_info {
+		marmot.proto.GeometryColumnInfoProto geom_col_info  = 2;
+	}
+	MarmotFileWriteOptionsProto write_options = 3;
+}
+message StoreDataSetOptionsProto {
+	CreateDataSetOptionsProto create_options = 1;
+	oneof optional_append {
+		bool append = 2;
+	}
+	oneof optional_partition_id {
+		string partition_id = 3;
+	}
+}
+
+message UpdateGeometryColumnInfoRequest {
+	string id = 1;
+	oneof optional_geometry_column_info {
+		GeometryColumnInfoProto gc_info = 2;
+	}
+}
+
+message CreateDataSetRequest {
+	string id = 1;						// 생성하고자 하는 데이터세트의 식별자.
+	oneof either_initialization {
+		marmot.proto.RecordSchemaProto record_schema = 2;	// 생성하고자 하는 데이터세트의 스키마.
+		// 생성된 데이터세트에 채우기 위해 수행할 실행계획.
+		// 생성될 데이터세트의 스키마 정보는 Plan 수행 결과 스키마를 사용한다.
+//		marmot.proto.service.ExecutePlanRequest plan_exec = 3;
+	}
+	CreateDataSetOptionsProto options = 4;
+}
+
+message ReadDataSetRequest {
+	string id = 1;						// 읽고자 하는 데이터세트의 식별자.
+	bool use_compression = 2;			// 데이터 송수신할 때 압축사용 여부
+}
+
+//message AppendPlanResultRequest {
+//	string id = 1;						// 추가하고자 하는 데이터세트의 식별자.
+//	marmot.proto.service.ExecutePlanRequest plan_exec = 2;
+//}
+
+message AppendRecordSetRequest {  
+	string id = 1;				// 업로드 대상 데이터세트 식별자
+	string rset_id = 2;			// 업로드할 레코드세트 식별자
+	oneof optional_partition_id {
+		string partition_id = 3;
+	}
+	bool use_compression = 4;	// 데이터 송수신할 때 압축사용 여부
+}
+
+//message AppendRecordSetChunkProto {
+//	message HeaderProto {
+//		string dataset = 1;		// 업로드 대상 데이터세트 식별자
+//		oneof optional_plan {
+//			// 추가하는 레코드를 서버쪽에서 전처리할 필요한 경우 사용될 Plan
+//			marmot.proto.optor.PlanProto plan = 2;
+//		}
+//	}
+//
+//	oneof either {
+//		HeaderProto header = 1;
+//		int32 sync = 2;
+//		bytes block = 3;
+//	}
+//}
+	
+message BindDataSetRequest {
+	string dataset = 1;
+	string file_path = 2;
+	DataSetTypeProto type = 3;
+	BindDataSetOptionsProto options = 4;
+}
+
+message BuildDataSetRequest {
+	string dataset = 1;
+	string file_path = 2;
+	string info_file_path = 3;
+	BindDataSetOptionsProto options = 4;
+}
+
+message CreateSpatialIndexOptionsProto {
+	oneof optional_sample_size {
+		int64 sample_size = 1;
+	}
+	oneof optional_block_size {
+		int64 block_size = 2;	// 생성될 클러스터 파일의 블럭 크기.
+	}
+	oneof optional_worker_count {
+		int32 worker_count = 3;	// 클러스터 생성 reducer 갯수
+	}
+}
+
+message EstimateQuadKeysOptionsProto {
+	oneof optional_mapper_count {
+		int32 mapper_count = 1;
+	}
+	oneof optional_valid_range {
+		EnvelopeProto valid_range = 2;
+	}
+	oneof optional_sample_size {
+		int64 sample_size = 3;
+	}
+	oneof optional_max_quad_key_length {
+		int32 max_quad_key_length = 4;
+	}
+	oneof optional_cluster_size {
+		int64 cluster_size = 5;
+	}
+}
+
+message ClusterSpatiallyOptionsProto {
+	bool force = 1;
+	oneof optional_mapper_count {
+		int32 mapper_count = 2;
+	}
+	oneof optional_valid_range {
+		EnvelopeProto valid_range = 3;
+	}
+	oneof either_quad_key_info {
+		string quad_key_list = 4;
+		string quad_key_ds_id = 5;
+		int64 sample_size = 6;
+	}
+	oneof optional_partition_count {
+		int32 partition_count = 7;	// 클러스터 생성 reducer 갯수
+	}
+	oneof optional_cluster_size {
+		int64 cluster_size = 8;
+	}
+	oneof optional_block_size {
+		int64 block_size = 9;	// 생성될 클러스터 파일의 블럭 크기.
+	}
+}
+
+message CreateSpatialIndexRequest {
+	string id = 1;		// 클러스터링 대상 데이터세트 식별자.
+	CreateSpatialIndexOptionsProto options = 2;
+}
+
+message MoveDataSetRequest {
+	string src_id = 1;
+	string dest_id = 2;
+}
+
+message MoveDirRequest {
+	string src_path = 1;
+	string dest_path = 2;
+}
+
+message QueryRangeRequest {
+	string id = 1;				// 검색 대상 데이터세트 식별자
+	EnvelopeProto range = 2;	// 검색 대상 영역
+	int32 sample_count = 3;		// 샘플수
+	bool use_compression = 4;	// 데이터 송수신할 때 압축사용 여부
+}
+
+
+
+
+message SpatialIndexInfoResponse {
+	oneof either {
+		SpatialIndexInfoProto index_info = 1;
+		VoidProto none = 2;
+		marmot.proto.service.ErrorProto error = 3;
+	}
+}
+message QuerySpatialClusterInfoRequest {
+	string dataset_id = 1;		// 대상 데이터세트 식별
+	EnvelopeProto bounds = 2;	// 검색 영역 (MBR)
+}
+message RangeQueryEstimateProto {
+	message ClusterEstimateProto {
+		string quad_key = 1;
+		int32 total_count = 2;
+		int32 match_count = 3;
+	};
+	
+	string ds_id = 1;
+	EnvelopeProto range = 2;
+	int64 match_count = 3;
+	repeated ClusterEstimateProto cluster_estimate = 4;
+}
+
+message EstimateQuadKeysRequest {
+	string ds_id = 1;		// 데이터세트 식별자
+	EstimateQuadKeysOptionsProto options = 2;
+}
+message ClusterSpatiallyRequest {
+	string ds_id = 1;
+	oneof optional_out_ds_id {
+		string out_ds_id = 2;
+	}
+	ClusterSpatiallyOptionsProto options = 3;
+}
+
+message EstimateRangeQueryRequest {
+	string dataset_id = 1;
+	EnvelopeProto range = 2;
+}
+message RangeQueryEstimateResponse {
+	oneof either {
+		RangeQueryEstimateProto estimate = 1;	// 공간 질의 결과 예측치
+		ErrorProto error = 2;
+	}
+}
+message ReadRawSpatialClusterRequest {
+	string dataset_id = 1;			// 접근하려는 데이터세트 식별자.
+	string quad_key = 2;			// 읽으려는 공간 클러스터 (인덱스 블럭) 식별자.
+	bool use_compression = 3;		// 데이터 송수신할 때 압축사용 여부
+}
+message SampleSpatialClusterRequest {
+	string dataset_id = 1;
+	string quad_key = 2;
+	EnvelopeProto bounds = 3;
+	double sample_ratio = 4;
+}
+
+message DirectoryTraverseRequest {
+	string directory = 1;	// 검색 대상 시작 디렉토리 경로
+	bool recursive = 2;		// 하위 디렉토리 검색 여부.
+}
+
+message CreateKafkaTopicRequest {
+	string topic = 1;
+	bool force = 2;
+}
+*/

@@ -1,0 +1,4 @@
+#!	/bin/bash
+
+java -jar antlr-4.7.2-complete.jar ColumnSelectionExpr.g4 -o generated/marmot/optor/support/colexpr -no-listener -visitor
+java -jar antlr-4.7.2-complete.jar TypeExpr.g4 -o generated/marmot/type/typeexpr -no-listener -visitor
