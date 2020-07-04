@@ -177,7 +177,8 @@ public class ColumnSelectorFactory {
 			
 			RecordSchema schema = m_schemas.get(ns);
 			if ( schema == null ) {
-				throw new ColumnSelectionException("unknown namespace: namespace=" + ns);
+				String details = String.format("unknown namespace: namespace='%s'", ns);
+				throw new ColumnSelectionException(details);
 			}
 			
 			schema.getColumns().stream()
@@ -195,7 +196,8 @@ public class ColumnSelectorFactory {
 			String ns = (nsCtx != null) ? nsCtx.getChild(0).getText() : "";
 			RecordSchema schema = m_schemas.get(ns);
 			if ( schema == null ) {
-				throw new ColumnSelectionException("unknown namespace: namespace=" + ns);
+				String details = String.format("unknown namespace: namespace='%s'", ns);
+				throw new ColumnSelectionException(details);
 			}
 			
 			Set<String> keys = FStream.from(colNameList).map(String::toLowerCase).toSet(); 
@@ -263,7 +265,8 @@ public class ColumnSelectorFactory {
 			throws ColumnSelectionException {
 			RecordSchema schema = m_schemas.get(ns);
 			if ( schema == null ) {
-				throw new ColumnSelectionException("unknown namespace: namespace=" + ns);
+				String details = String.format("unknown namespace: namespace='%s'", ns);
+				throw new ColumnSelectionException(details);
 			}
 			
 			SelectedColumnInfo info = schema.findColumn(colName)
