@@ -26,13 +26,13 @@ public class AutoClosingRecordStream extends AbstractRecordStream {
 	}
 	
 	@Override
-	public boolean next(Record record) {
-		boolean done = m_stream.next(record);
-		if ( !done ) {
+	public Record next() {
+		Record record;
+		if ( (record = m_stream.next()) == null ) {
 			closeQuietly();
 		}
 		
-		return done;
+		return record;
 	}
 	
 	@Override

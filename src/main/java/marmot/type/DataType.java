@@ -44,35 +44,35 @@ public abstract class DataType implements Serializable {
 	public static final CoordinateType COORDINATE = CoordinateType.get();
 	public static final EnvelopeType ENVELOPE = EnvelopeType.get();
 	
-	public static final PointType POINT = PointType.of("?");
+	public static final PointType POINT = PointType.of(null);
 	public static final PointType POINT(String srid) {
 		return PointType.of(srid);
 	}
-	public static final MultiPointType MULTI_POINT = MultiPointType.of("?");
+	public static final MultiPointType MULTI_POINT = MultiPointType.of(null);
 	public static final MultiPointType MULTI_POINT(String srid) {
 		return MultiPointType.of(srid);
 	}
-	public static final LineStringType LINESTRING = LineStringType.of("?");
+	public static final LineStringType LINESTRING = LineStringType.of(null);
 	public static final LineStringType LINESTRING(String srid) {
 		return LineStringType.of(srid);
 	}
-	public static final MultiLineStringType MULTI_LINESTRING = MultiLineStringType.of("?");
+	public static final MultiLineStringType MULTI_LINESTRING = MultiLineStringType.of(null);
 	public static final MultiLineStringType MULTI_LINESTRING(String srid) {
 		return MultiLineStringType.of(srid);
 	}
-	public static final PolygonType POLYGON = PolygonType.of("?");
+	public static final PolygonType POLYGON = PolygonType.of(null);
 	public static final PolygonType POLYGON(String srid) {
 		return PolygonType.of(srid);
 	}
-	public static final MultiPolygonType MULTI_POLYGON = MultiPolygonType.of("?");
+	public static final MultiPolygonType MULTI_POLYGON = MultiPolygonType.of(null);
 	public static final MultiPolygonType MULTI_POLYGON(String srid) {
 		return MultiPolygonType.of(srid);
 	}
-	public static final GeometryCollectionType GEOM_COLLECTION = GeometryCollectionType.of("?");
+	public static final GeometryCollectionType GEOM_COLLECTION = GeometryCollectionType.of(null);
 	public static final GeometryCollectionType GEOM_COLLECTION(String srid) {
 		return GeometryCollectionType.of(srid);
 	}
-	public static final GeometryType GEOMETRY = GeometryType.of("?");
+	public static final GeometryType GEOMETRY = GeometryType.of(null);
 	public static final GeometryType GEOMETRY(String srid) {
 		return GeometryType.of(srid);
 	}

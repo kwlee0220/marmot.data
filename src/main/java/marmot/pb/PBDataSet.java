@@ -13,13 +13,14 @@ import java.util.concurrent.CancellationException;
 
 import javax.annotation.Nullable;
 
-import marmot.DataSetException;
 import marmot.DefaultRecord;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
-import marmot.WritableDataSet;
+import marmot.RecordWriter;
+import marmot.dataset.DataSetException;
 import marmot.stream.AbstractRecordStream;
 import proto.RecordProto;
 import proto.StringProto;
@@ -31,7 +32,7 @@ import utils.io.IOUtils;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class PBDataSet implements WritableDataSet {
+public abstract class PBDataSet implements RecordReader, RecordWriter {
 	@Nullable private RecordSchema m_schema;
 	
 	protected abstract Tuple<RecordSchema,InputStream> getInputStream() throws IOException;
@@ -80,17 +81,12 @@ public abstract class PBDataSet implements WritableDataSet {
 	}
 
 	@Override
-	public long write(RecordStream stream) {
-		Record rec = DefaultRecord.of(stream.getRecordSchema());
-		
-		long count = 0;
+	public void write(RecordStream stream) {
 		try ( OutputStream out = getOutputStream(stream.getRecordSchema()) ) {
-			while ( stream.next(rec) ) {
-				PBDataSets.toProto(rec).writeDelimitedTo(out);
-				++count;
+			Record record;
+			while ( (record = stream.next()) != null ) {
+				PBDataSets.toProto(record).writeDelimitedTo(out);
 			}
-			
-			return count;
 		}
 		catch ( InterruptedIOException e ) {
 			throw new CancellationException("" + e);
@@ -103,10 +99,12 @@ public abstract class PBDataSet implements WritableDataSet {
 	private static class PBRecordStream extends AbstractRecordStream {
 		private final RecordSchema m_schema;
 		private final InputStream m_is;
+		private final Record m_output;
 		
 		private PBRecordStream(RecordSchema schema, InputStream is) {
 			m_schema = schema;
 			m_is = is;
+			m_output = DefaultRecord.of(m_schema);
 		}
 
 		@Override
@@ -120,18 +118,18 @@ public abstract class PBDataSet implements WritableDataSet {
 		}
 		
 		@Override
-		public boolean next(Record output) {
+		public Record next() {
 			try {
 				RecordProto proto = RecordProto.parseDelimitedFrom(m_is);
 				if ( proto != null ) {
 					for ( int i =0; i < m_schema.getColumnCount(); ++i ) {
 						PBValueProtos.fromProto(proto.getColumn(i));
-						output.set(i, PBValueProtos.fromProto(proto.getColumn(i)));
+						m_output.set(i, PBValueProtos.fromProto(proto.getColumn(i)));
 					}
-					return true;
+					return m_output;
 				}
 				else {
-					return false;
+					return null;
 				}
 			}
 			catch ( IOException e ) {

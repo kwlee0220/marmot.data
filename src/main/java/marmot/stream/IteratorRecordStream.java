@@ -28,6 +28,11 @@ public class IteratorRecordStream extends AbstractRecordStream {
 	public RecordSchema getRecordSchema() {
 		return m_schema;
 	}
+
+	@Override
+	public Record next() {
+		return nextCopy();
+	}
 	
 	@Override
 	public Record nextCopy() {

@@ -28,15 +28,15 @@ public class TakeRecordStream extends AbstractRecordStream {
 	}
 
 	@Override
-	public boolean next(Record output) {
+	public Record next() {
 		checkNotClosed();
 
 		if ( m_remains <= 0 ) {
-			return false;
+			return null;
 		}
 		else {
 			--m_remains;
-			return m_stream.next(output);
+			return m_stream.next();
 		}
 	}
 	

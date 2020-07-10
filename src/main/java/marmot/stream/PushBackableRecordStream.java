@@ -37,15 +37,14 @@ public class PushBackableRecordStream extends AbstractRecordStream {
 	}
 
 	@Override
-	public boolean next(Record record) throws RecordStreamException {
+	public Record next() throws RecordStreamException {
 		checkNotClosed();
 		
 		if ( !m_pushBackeds.isEmpty() ) {
-			record.set(m_pushBackeds.remove(m_pushBackeds.size()-1));
-			return true;
+			return m_pushBackeds.remove(m_pushBackeds.size()-1);
 		}
 		else {
-			return m_input.next(record);
+			return m_input.next();
 		}
 	}
 	

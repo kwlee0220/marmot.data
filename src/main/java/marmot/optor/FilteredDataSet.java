@@ -2,8 +2,8 @@ package marmot.optor;
 
 import java.util.function.Predicate;
 
-import marmot.DataSet;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.stream.AbstractRecordStream;
@@ -12,11 +12,11 @@ import marmot.stream.AbstractRecordStream;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class FilteredDataSet implements DataSet {
-	private final DataSet m_input;
+public class FilteredDataSet implements RecordReader {
+	private final RecordReader m_input;
 	private final Predicate<? super Record> m_pred;
 	
-	public FilteredDataSet(DataSet input, Predicate<? super Record> pred) {
+	public FilteredDataSet(RecordReader input, Predicate<? super Record> pred) {
 		m_input = input;
 		m_pred = pred;
 	}
@@ -51,14 +51,15 @@ public class FilteredDataSet implements DataSet {
 		}
 		
 		@Override
-		public boolean next(Record output) {
-			while ( m_input.next(output) ) {
-				if ( m_pred.test(output) ) {
-					return true;
+		public Record next() {
+			Record record;
+			while ( (record = m_input.next()) != null ) {
+				if ( m_pred.test(record) ) {
+					return record;
 				}
 			}
 			
-			return false;
+			return null;
 		}
 		
 		@Override

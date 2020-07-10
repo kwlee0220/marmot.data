@@ -5,13 +5,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import marmot.DefaultRecord;
-import marmot.Record;
 import marmot.RecordStream;
 import marmot.RecordStreamClosedException;
 import utils.LoggerSettable;
 import utils.Throwables;
-import utils.Utilities;
 
 /**
  * 
@@ -42,26 +39,6 @@ public abstract class AbstractRecordStream implements RecordStream, LoggerSettab
 				m_closed.set(true);
 			}
 		}
-	}
-
-	@Override
-	public boolean next(Record output) {
-		Utilities.checkNotNullArgument(output, "output Record");
-		
-		Record next = nextCopy();
-		if ( next != null ) {
-			output.set(next);
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-	@Override
-	public Record nextCopy() {
-		Record output = DefaultRecord.of(getRecordSchema());
-		return ( next(output) ) ? output : null;
 	}
 
 	@Override

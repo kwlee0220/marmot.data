@@ -24,8 +24,8 @@ public class EmptyRecordStream implements RecordStream {
 	}
 	
 	@Override
-	public boolean next(Record output) {
-		return false;
+	public Record next() {
+		return null;
 	}
 
 	@Override

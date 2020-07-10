@@ -1,10 +1,13 @@
 package marmot.avro;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
@@ -13,8 +16,10 @@ import org.apache.avro.io.DecoderFactory;
 
 import marmot.Record;
 import marmot.RecordSchema;
+import marmot.RecordStream;
 import marmot.RecordStreamException;
 import marmot.stream.AbstractRecordStream;
+import utils.Utilities;
 
 /**
  * 
@@ -29,18 +34,31 @@ public class AvroDeserializer extends AbstractRecordStream {
 
 	private final DatumReader<GenericRecord> m_reader;
 	private final BinaryDecoder m_decoder;
-	private final GenericRecord m_record;
+	private final AvroRecord m_record;
 	
-	public static AvroDeserializer from(RecordSchema schema, InputStream is) {
+	public static RecordStream deserialize(RecordSchema schema, byte[] bytes) {
+		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+		return new AvroDeserializer(schema, bais);
+	}
+	
+	public static RecordStream deserialize(RecordSchema schema, InputStream is) throws IOException {
+		return new AvroDeserializer(schema, is);
+	}
+	
+	public static RecordStream deserialize(RecordSchema schema, File file) throws IOException {
+		InputStream is = new BufferedInputStream(new FileInputStream(file));
 		return new AvroDeserializer(schema, is);
 	}
 	
 	private AvroDeserializer(RecordSchema schema, InputStream is) {
+		Utilities.checkNotNullArgument(schema);
+		Utilities.checkNotNullArgument(is);
+		
 		m_avroSchema = AvroUtils.toSchema(schema);
 		m_schema = schema;
 		m_is = is;
 
-		m_record = new GenericData.Record(m_avroSchema);
+		m_record = new AvroRecord(m_schema, m_avroSchema);
 		m_reader = new GenericDatumReader<GenericRecord>(m_avroSchema);
 		m_decoder = FACT.binaryDecoder(is, null);
 	}
@@ -54,28 +72,21 @@ public class AvroDeserializer extends AbstractRecordStream {
 		return m_schema;
 	}
 
-	public Schema getAvroStream() {
+	public Schema getAvroSchema() {
 		return m_avroSchema;
 	}
 	
 	@Override
-	public boolean next(Record output) {
+	public Record next() {
 		checkNotClosed();
 		
 		try {
 			if ( m_decoder.isEnd() ) {
-				return false;
+				return null;
 			}
-			
-			if ( output instanceof AvroRecord ) {
-				m_reader.read(((AvroRecord)output).getGenericRecord(), m_decoder);
-			}
-			else {
-				m_reader.read(m_record, m_decoder);
-				AvroUtils.copyToRecord(m_record, output);
-			}
-			
-			return true;
+
+			m_reader.read(m_record.getGenericRecord(), m_decoder);
+			return m_record;
 		}
 		catch ( IOException e ) {
 			throw new RecordStreamException("" + e);

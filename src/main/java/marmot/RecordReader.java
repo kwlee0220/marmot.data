@@ -14,7 +14,7 @@ import marmot.optor.FilteredDataSet;
 import marmot.optor.MultiColumnKey;
 import marmot.optor.PeekingDataSet;
 import marmot.optor.ProjectedDataSet;
-import marmot.support.RecordListDataSet;
+import marmot.support.RecordListDataSource;
 import marmot.support.RecordScript;
 import utils.Utilities;
 import utils.stream.FStream;
@@ -23,60 +23,57 @@ import utils.stream.FStream;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public interface DataSet {
+public interface RecordReader {
 	public RecordSchema getRecordSchema();
 
 	public RecordStream read();
 	
-	public default DataSet cache() {
-		return cache(RecordListDataSet.of(getRecordSchema()));
-	}
-	public default DataSet cache(WritableDataSet store) {
-		try ( RecordStream stream = read() ) {
-			store.write(stream);
-			return store;
-		}
+	public default RecordReader cache() {
+		RecordListDataSource.Writer writer = RecordListDataSource.writer(getRecordSchema());
+		writer.write(read());
+		
+		return RecordListDataSource.reader(getRecordSchema(), writer.getRecordList());
 	}
 	
-	public default DataSet filter(Predicate<? super Record> pred) {
+	public default RecordReader filter(Predicate<? super Record> pred) {
 		return new FilteredDataSet(this, pred);
 	}
 
-	public default DataSet filterScript(String predicate) {
+	public default RecordReader filterScript(String predicate) {
 		return filterScript(RecordScript.of(predicate));
 	}
-	public default DataSet filterScript(RecordScript predicate) {
+	public default RecordReader filterScript(RecordScript predicate) {
 		return new FilterScript(this, predicate);
 	}
 
-	public default DataSet project(String... cols) {
+	public default RecordReader project(String... cols) {
 		return new ProjectedDataSet(this, MultiColumnKey.of(cols));
 	}
-	public default DataSet project(List<String> cols) {
+	public default RecordReader project(List<String> cols) {
 		return new ProjectedDataSet(this, MultiColumnKey.ofNames(cols));
 	}
 	
-	public default DataSet peek(Consumer<Record> action) {
+	public default RecordReader peek(Consumer<Record> action) {
 		return new PeekingDataSet(this, action);
 	}
 	
-	public static DataSet concat(RecordSchema schema, FStream<? extends DataSet> datasets) {
+	public static RecordReader concat(RecordSchema schema, FStream<? extends RecordReader> datasets) {
 		Utilities.checkNotNullArgument(schema, "schema is null");
 		Utilities.checkNotNullArgument(datasets, "DataSet stream is null");
 		
 		return new FStreamConcatedDataSet(schema, datasets);
 	}
 	
-	public static DataSet concat(DataSet... datasets) {
+	public static RecordReader concat(RecordReader... datasets) {
 		Utilities.checkNotNullArguments(datasets, "Datasets are null");
 		
 		return concat(datasets[0].getRecordSchema(), FStream.of(datasets));
 	}
 	
-	public static DataSet concat(Iterable<? extends DataSet> datasets) {
+	public static RecordReader concat(Iterable<? extends RecordReader> datasets) {
 		Utilities.checkNotNullArgument(datasets, "rsets is null");
 		
-		Iterator<? extends DataSet> iter = datasets.iterator();
+		Iterator<? extends RecordReader> iter = datasets.iterator();
 		if ( !iter.hasNext() ) {
 			throw new IllegalArgumentException("rset is empty");
 		}
@@ -88,7 +85,7 @@ public interface DataSet {
 			@Override
 			public void subscribe(ObservableEmitter<Record> emitter) throws Exception {
 				Record record;
-				try ( RecordStream stream = DataSet.this.read() ) {
+				try ( RecordStream stream = RecordReader.this.read() ) {
 					while ( (record = stream.nextCopy()) != null ) {
 						if ( emitter.isDisposed() ) {
 							return;

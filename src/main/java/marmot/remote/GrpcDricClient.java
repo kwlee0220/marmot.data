@@ -8,9 +8,9 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import marmot.DataSetNotFoundException;
+import marmot.dataset.DataSetNotFoundException;
 import marmot.remote.client.GrpcDataSetProxy;
-import marmot.remote.client.GrpcDataSetServiceProxy;
+import marmot.remote.client.GrpcDataSetServerProxy;
 
 /**
  * 
@@ -21,7 +21,7 @@ public class GrpcDricClient {
 	
 	private final ManagedChannel m_channel;
 	private final ExecutorService m_executor;
-	private final GrpcDataSetServiceProxy m_service;
+	private final GrpcDataSetServerProxy m_service;
 	
 	public static GrpcDricClient connect(String host, int port) throws IOException {
 		ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port)
@@ -35,7 +35,7 @@ public class GrpcDricClient {
 		m_channel = channel;
 		
 		m_executor = Executors.newFixedThreadPool(16);
-		m_service = new GrpcDataSetServiceProxy(channel);
+		m_service = new GrpcDataSetServerProxy(channel);
 
 		m_server = ServerBuilder.forPort(0).build();
 		m_server.start();
@@ -55,7 +55,7 @@ public class GrpcDricClient {
 		return m_channel;
 	}
 	
-	public GrpcDataSetServiceProxy getStreamService() {
+	public GrpcDataSetServerProxy getStreamService() {
 		return m_service;
 	}
 	

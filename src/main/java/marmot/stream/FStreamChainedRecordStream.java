@@ -1,6 +1,6 @@
 package marmot.stream;
 
-import marmot.DataSet;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import utils.Utilities;
@@ -15,17 +15,17 @@ public class FStreamChainedRecordStream extends ChainedRecordStream {
 	private final RecordSchema m_schema;
 	private final FStream<? extends RecordStream> m_components;
 	
-	public static FStreamChainedRecordStream fromDataSets(FStream<? extends DataSet> components) {
-		PrependableFStream<? extends DataSet> prep = components.toPrependable();
+	public static FStreamChainedRecordStream fromDataSets(FStream<? extends RecordReader> components) {
+		PrependableFStream<? extends RecordReader> prep = components.toPrependable();
 		RecordSchema schema = prep.peekNext()
-								.map(DataSet::getRecordSchema)
+								.map(RecordReader::getRecordSchema)
 								.getOrThrow(() -> new IllegalArgumentException("empty components"));
 		return fromDataSets(schema, prep);
 	}
 	
 	public static FStreamChainedRecordStream fromDataSets(RecordSchema schema,
-														FStream<? extends DataSet> components) {
-		return new FStreamChainedRecordStream(schema, components.map(DataSet::read));
+														FStream<? extends RecordReader> components) {
+		return new FStreamChainedRecordStream(schema, components.map(RecordReader::read));
 	}
 	
 	public static FStreamChainedRecordStream from(FStream<? extends RecordStream> components) {

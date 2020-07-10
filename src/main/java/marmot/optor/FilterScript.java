@@ -5,9 +5,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import marmot.DataSet;
 import marmot.DefaultRecord;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.stream.AbstractRecordStream;
@@ -22,13 +22,13 @@ import utils.Utilities;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class FilterScript implements DataSet {
+public class FilterScript implements RecordReader {
 	private static final Logger s_logger = LoggerFactory.getLogger(FilterScript.class);
 	
-	private final DataSet m_input;
+	private final RecordReader m_input;
 	private final RecordScript m_script;
 
-	public FilterScript(DataSet input, RecordScript script) {
+	public FilterScript(RecordReader input, RecordScript script) {
 		Utilities.checkNotNullArgument(script, "predicate is null");
 		
 		m_input = input;
@@ -77,11 +77,12 @@ public class FilterScript implements DataSet {
 		}
 
 		@Override
-		public boolean next(Record record) {
-			while ( m_input.next(record) ) {
+		public Record next() {
+			Record record;
+			while ( (record = m_input.next()) != null ) {
 				try {
 					if ( test(record) ) {
-						return true;
+						return record;
 					}
 				}
 				catch ( Throwable e ) {
@@ -89,7 +90,7 @@ public class FilterScript implements DataSet {
 				}
 			}
 			
-			return false;
+			return null;
 		}
 
 		private boolean test(Record record) {

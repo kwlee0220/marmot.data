@@ -1,8 +1,8 @@
 package marmot.optor;
 
-import marmot.DataSet;
 import marmot.DefaultRecord;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.optor.support.colexpr.ColumnSelector;
@@ -15,8 +15,8 @@ import utils.Utilities;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class ProjectedDataSet implements DataSet {
-	private final DataSet m_input;
+public class ProjectedDataSet implements RecordReader {
+	private final RecordReader m_input;
 	private final String m_columnSelection;
 	
 	private final RecordSchema m_schema;
@@ -29,7 +29,7 @@ public class ProjectedDataSet implements DataSet {
 	 * 
 	 * @param	columnSelection	projection 연산에 사용될 컬럼들의 이름 배열.
 	 */
-	public ProjectedDataSet(DataSet input, String columnSelection) {
+	public ProjectedDataSet(RecordReader input, String columnSelection) {
 		Utilities.checkArgument(columnSelection != null, "Column seelection expression is null");
 
 		m_input = input;
@@ -38,7 +38,7 @@ public class ProjectedDataSet implements DataSet {
 		m_schema = m_selector.getRecordSchema();
 	}
 	
-	public ProjectedDataSet(DataSet input, MultiColumnKey keys) {
+	public ProjectedDataSet(RecordReader input, MultiColumnKey keys) {
 		this(input, keys.streamKeyColumns().map(KeyColumn::name).join(","));
 	}
 
@@ -64,13 +64,13 @@ public class ProjectedDataSet implements DataSet {
 	static class StreamImpl extends AbstractRecordStream {
 		private final RecordStream m_input;
 		private final ColumnSelector m_selector;
-		private final Record m_buffer;
+		private final Record m_output;
 		
 		StreamImpl(RecordStream input, ColumnSelector selector) {
 			m_input = input;
 			m_selector = selector;
 			
-			m_buffer = DefaultRecord.of(input.getRecordSchema());
+			m_output = DefaultRecord.of(m_selector.getRecordSchema());
 		}
 		
 		@Override
@@ -84,22 +84,23 @@ public class ProjectedDataSet implements DataSet {
 		}
 		
 		@Override
-		public boolean next(Record output) {
-			if ( m_input.next(m_buffer) ) {
-				m_selector.select(m_buffer, output);
-				return true;
+		public Record next() {
+			Record record;
+			if ( (record = m_input.next()) != null ) {
+				m_selector.select(record, m_output);
+				return m_output;
 			}
 			else {
-				return false;
+				return null;
 			}
 		}
 		
 		@Override
 		public Record nextCopy() {
-			if ( m_input.next(m_buffer) ) {
+			Record record;
+			if ( (record = m_input.next()) != null ) {
 				Record output = DefaultRecord.of(getRecordSchema());
-				m_selector.select(m_buffer, output);
-				
+				m_selector.select(record, output);
 				return output;
 			}
 			else {

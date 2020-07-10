@@ -1,27 +1,22 @@
 package marmot.support;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 import javax.annotation.Nullable;
 
-import marmot.DataSetException;
 import marmot.DefaultRecord;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
-import marmot.WritableDataSet;
+import marmot.dataset.DataSetException;
 import marmot.stream.AbstractRecordStream;
-import marmot.type.DataType;
 import marmot.type.RecordType;
 import utils.func.Tuple;
 import utils.io.IOUtils;
@@ -30,25 +25,20 @@ import utils.io.IOUtils;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class SerializingDataSet implements WritableDataSet {
+public abstract class SerializingRecordReader implements RecordReader {
 	@Nullable private RecordSchema m_schema;
 	
 	protected abstract Tuple<RecordSchema,ObjectInputStream> getInputStream() throws IOException;
-	protected abstract ObjectOutputStream getOutputStream(RecordSchema schema) throws IOException;
 	
-	public static FileDataSet from(File file) {
-		return new FileDataSet(file);
+	public static FileReader from(File file) {
+		return new FileReader(file);
 	}
 	
-	public static BytesDataSet fromBytes() {
-		return new BytesDataSet();
+	public static BytesReader fromBytes(byte[] bytes) {
+		return new BytesReader(bytes);
 	}
 	
-	public static BytesDataSet fromBytes(byte[] bytes) {
-		return new BytesDataSet(bytes);
-	}
-	
-	private SerializingDataSet() {
+	private SerializingRecordReader() {
 		m_schema = null;
 	}
 
@@ -83,37 +73,15 @@ public abstract class SerializingDataSet implements WritableDataSet {
 		}
 	}
 
-	@Override
-	public long write(RecordStream stream) {
-		RecordSchema schema = stream.getRecordSchema();
-		
-		try ( ObjectOutputStream oos = getOutputStream(schema) ) {
-			long count = 0;
-			Record rec = DefaultRecord.of(schema);
-			while ( stream.next(rec) ) {
-				oos.writeByte(1);
-				for ( int i =0; i < schema.getColumnCount(); ++i ) {
-					DataType colType = schema.getColumnAt(i).type();
-					colType.serialize(rec.get(i), oos);
-				}
-				++count;
-			}
-			oos.writeByte(0);
-			
-			return count;
-		}
-		catch ( IOException e ) {
-			throw new DataSetException("" + e);
-		}
-	}
-
 	private static class StreamImpl extends AbstractRecordStream {
 		private final RecordSchema m_schema;
 		private final ObjectInputStream m_ois;
+		private final Record m_record;
 		
 		StreamImpl(RecordSchema schema, ObjectInputStream ois) {
 			m_schema = schema;
 			m_ois = ois;
+			m_record = DefaultRecord.of(m_schema);
 		}
 		
 		@Override
@@ -127,16 +95,16 @@ public abstract class SerializingDataSet implements WritableDataSet {
 		}
 		
 		@Override
-		public boolean next(Record output) {
+		public Record next() {
 			try {
 				if ( m_ois.readByte() == 0 ) {
-					return false;
+					return null;
 				}
 				else {
 					m_schema.streamColumns()
-							.forEachOrThrow(col -> output.set(col.ordinal(),
-															col.type().deserialize(m_ois)));
-					return true;
+							.forEachOrThrow(col -> m_record.set(col.ordinal(),
+																col.type().deserialize(m_ois)));
+					return m_record;
 				}
 			}
 			catch ( IOException e ) {
@@ -145,10 +113,10 @@ public abstract class SerializingDataSet implements WritableDataSet {
 		}
 	}
 	
-	public static class FileDataSet extends SerializingDataSet {
+	public static class FileReader extends SerializingRecordReader {
 		private final File m_file;
 		
-		private FileDataSet(File file) {
+		private FileReader(File file) {
 			m_file = file;
 		}
 		
@@ -164,25 +132,13 @@ public abstract class SerializingDataSet implements WritableDataSet {
 			RecordSchema schema = ((RecordType)TypeParser.parseTypeId(typeId)).getRecordSchema();
 			return Tuple.of(schema, ois);
 		}
-
-		@Override
-		protected ObjectOutputStream getOutputStream(RecordSchema schema) throws IOException {
-			ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(
-																	new FileOutputStream(m_file)));
-			oos.writeUTF(DataType.RECORD(schema).id());
-			oos.flush();
-			return oos;
-		}
 	}
 	
-	public static class BytesDataSet extends SerializingDataSet {
+	public static class BytesReader extends SerializingRecordReader {
 		@Nullable private byte[] m_bytes;
 		
-		private BytesDataSet(byte[] bytes) {
+		private BytesReader(byte[] bytes) {
 			m_bytes = bytes;
-		}
-		
-		private BytesDataSet() {
 		}
 		
 		public byte[] getBytes() {
@@ -199,32 +155,6 @@ public abstract class SerializingDataSet implements WritableDataSet {
 			String typeId = ois.readUTF();
 			RecordSchema schema = ((RecordType)TypeParser.parseTypeId(typeId)).getRecordSchema();
 			return Tuple.of(schema, ois);
-		}
-
-		@Override
-		protected ObjectOutputStream getOutputStream(RecordSchema schema) throws IOException {
-			SerializingOutputStream oos = new SerializingOutputStream(new ByteArrayOutputStream());
-			oos.writeUTF(DataType.RECORD(schema).id());
-			oos.flush();
-			return oos;
-		}
-		
-		private final class SerializingOutputStream extends ObjectOutputStream {
-			private final ByteArrayOutputStream m_baos;
-			
-			protected SerializingOutputStream(ByteArrayOutputStream baos)
-				throws IOException, SecurityException {
-				super(baos);
-				
-				m_baos = baos;
-			}
-			
-			@Override
-			public void close() throws IOException {
-				super.close();
-				
-				m_bytes = m_baos.toByteArray();
-			}
 		}
 	}
 }

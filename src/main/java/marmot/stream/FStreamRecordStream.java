@@ -1,5 +1,6 @@
 package marmot.stream;
 
+import marmot.DefaultRecord;
 import marmot.Record;
 import marmot.RecordSchema;
 import utils.stream.FStream;
@@ -25,6 +26,13 @@ public class FStreamRecordStream extends AbstractRecordStream {
 	@Override
 	protected void closeInGuard() throws Exception {
 		m_stream.closeQuietly();
+	}
+
+	@Override
+	public Record next() {
+		return m_stream.next()
+						.map(DefaultRecord::duplicate)
+						.getOrNull();
 	}
 	
 	@Override

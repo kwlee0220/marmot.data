@@ -170,6 +170,11 @@ public class PipedRecordStream extends AbstractRecordStream {
 	}
 	
 	@Override
+	public Record next() {
+		return nextCopy();
+	}
+	
+	@Override
 	public Record nextCopy() {
 		checkNotClosed();
 		

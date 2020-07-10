@@ -1,5 +1,7 @@
 package marmot.avro;
 
+import java.util.Arrays;
+
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -15,7 +17,7 @@ import marmot.type.DataType;
  */
 class AvroRecord implements Record {
 	private final RecordSchema m_schema;
-	private final GenericRecord m_grecord;
+	private GenericRecord m_grecord;
 	private final Object[] m_cache;
 	
 	AvroRecord(RecordSchema schema, GenericRecord record) {
@@ -37,6 +39,11 @@ class AvroRecord implements Record {
 	
 	public GenericRecord getGenericRecord() {
 		return m_grecord;
+	}
+	
+	public void setGenericRecord(GenericRecord grec) {
+		m_grecord = grec;
+		Arrays.fill(m_cache, null);
 	}
 
 	@Override
@@ -63,5 +70,10 @@ class AvroRecord implements Record {
 		Object field = AvroUtils.toAvroValue(type, value);
 		m_grecord.put(idx,  field);
 		return this;
+	}
+	
+	@Override
+	public String toString() {
+		return "" + m_grecord;
 	}
 }

@@ -213,6 +213,13 @@ public class DefaultRecord implements Record {
 		return copy;
 	}
 	
+	public static DefaultRecord duplicate(Record src) {
+		DefaultRecord copy = DefaultRecord.of(src.getRecordSchema());
+		copy.set(src);
+		
+		return copy;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if ( this == obj ) {

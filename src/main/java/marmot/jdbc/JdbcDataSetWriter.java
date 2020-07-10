@@ -9,11 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import marmot.Column;
-import marmot.DataSetWriter;
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
+import marmot.RecordWriter;
 import utils.Utilities;
 import utils.jdbc.JdbcProcessor;
 
@@ -22,7 +22,7 @@ import utils.jdbc.JdbcProcessor;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class JdbcDataSetWriter implements DataSetWriter {
+public class JdbcDataSetWriter implements RecordWriter {
 	private final Logger s_logger = LoggerFactory.getLogger(JdbcDataSetWriter.class);
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final int DISPLAY_GAP = 100000;
@@ -44,7 +44,7 @@ public class JdbcDataSetWriter implements DataSetWriter {
 	}
 
 	@Override
-	public long write(RecordStream stream) {
+	public void write(RecordStream stream) {
 		Utilities.checkNotNullArgument(stream, "rset is null");
 		
 		String valuesExpr = createInsertValueExpr(m_adaptor);
@@ -85,8 +85,6 @@ public class JdbcDataSetWriter implements DataSetWriter {
 			throw new RecordStreamException("" + e);
 		}
 		s_logger.info("inserted: {} records", count.get());
-		
-		return count.get();
 	}
 
 	@Override

@@ -8,7 +8,6 @@ import java.util.concurrent.CancellationException;
 import org.slf4j.LoggerFactory;
 
 import marmot.Column;
-import marmot.DefaultRecord;
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStream;
@@ -51,7 +50,7 @@ public class PBDataSets {
 		return builder.build();
 	}
 	
-	private static class WriteRecordSetToOutStream extends AbstractThreadedExecution<Long> {
+	private static class WriteRecordSetToOutStream extends AbstractThreadedExecution<Void> {
 		private final RecordStream m_rset;
 		private final OutputStream m_os;
 		
@@ -63,23 +62,21 @@ public class PBDataSets {
 		}
 
 		@Override
-		protected Long executeWork() throws CancellationException, Exception {
-			Record rec = DefaultRecord.of(m_rset.getRecordSchema());
-			
-			long count = 0;
+		protected Void executeWork() throws CancellationException, Exception {
 			try {
 				String typeId = m_rset.getRecordSchema().toTypeId();
 				PBUtils.STRING(typeId).writeDelimitedTo(m_os);
-				while ( m_rset.next(rec) ) {
+				
+				Record record;
+				while ( (record = m_rset.next()) != null ) {
 					if ( !isRunning() ) {
 						break;
 					}
 					
-					toProto(rec).writeDelimitedTo(m_os);
-					++count;
+					toProto(record).writeDelimitedTo(m_os);
 				}
 				
-				return count;
+				return null;
 			}
 			catch ( InterruptedIOException e ) {
 				throw new CancellationException("" + e);

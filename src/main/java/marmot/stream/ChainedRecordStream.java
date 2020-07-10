@@ -40,27 +40,28 @@ public abstract class ChainedRecordStream extends AbstractRecordStream {
 	}
 
 	@Override
-	public boolean next(Record record) throws RecordStreamException {
+	public Record next() throws RecordStreamException {
 		checkNotClosed();
 		
 		if ( m_eos ) {
-			return false;
+			return null;
 		}
 		
 		// first-call?
 		if ( m_current == null ) { 
 			if ( (m_current = getNextRecordStream()) == null ) {
 				m_eos = true;
-				return false;
+				return null;
 			}
 		}
 		
-		while ( !m_current.next(record) ) {
+		Record record;
+		while ( (record = m_current.next()) == null ) {
 			m_current.closeQuietly();
 			 
 			if ( (m_current = getNextRecordStream()) == null ) {
 				m_eos = true;
-				return false;
+				return null;
 			}
 			
 			if ( !getRecordSchema().equals(m_current.getRecordSchema()) ) {
@@ -70,6 +71,6 @@ public abstract class ChainedRecordStream extends AbstractRecordStream {
 			}
 		}
 		
-		return true;
+		return record;
 	}
 }

@@ -2,8 +2,8 @@ package marmot.optor;
 
 import java.util.function.Consumer;
 
-import marmot.DataSet;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.stream.AbstractRecordStream;
@@ -12,11 +12,11 @@ import marmot.stream.AbstractRecordStream;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class PeekingDataSet implements DataSet {
-	private final DataSet m_input;
+public class PeekingDataSet implements RecordReader {
+	private final RecordReader m_input;
 	private final Consumer<Record> m_action;
 	
-	public PeekingDataSet(DataSet input, Consumer<Record> action) {
+	public PeekingDataSet(RecordReader input, Consumer<Record> action) {
 		m_input = input;
 		m_action = action;
 	}
@@ -49,14 +49,13 @@ public class PeekingDataSet implements DataSet {
 		}
 		
 		@Override
-		public boolean next(Record output) {
-			if ( m_input.next(output) ) {
-				m_action.accept(output);
-				return true;
+		public Record next() {
+			Record record;
+			if ( (record = m_input.next()) != null ) {
+				m_action.accept(record);
 			}
-			else {
-				return false;
-			}
+			
+			return record;
 		}
 		
 		@Override

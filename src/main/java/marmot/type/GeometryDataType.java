@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -23,6 +26,7 @@ import com.vividsolutions.jts.io.WKTReader;
 import com.vividsolutions.jts.io.WKTWriter;
 
 import utils.Utilities;
+import utils.func.FOption;
 
 
 /**
@@ -42,15 +46,22 @@ public abstract class GeometryDataType extends DataType {
 	public abstract GeometryDataType pluralType();
 	public abstract GeometryDataType duplicate(String srid);
 	
-	protected GeometryDataType(TypeClass tc, Class<?> instClass, String srid) {
+	protected GeometryDataType(TypeClass tc, Class<?> instClass, @Nullable String srid) {
 		super(encodeTypeId(tc, srid), tc, instClass); 
 		
 		m_srid = srid;
 		m_displayName = encodeTypeName(tc, srid);
 	}
 	
+	@Nullable
 	public String srid() {
 		return m_srid;
+	}
+	
+	public static String getEpsgCode(String srid) {
+		return FOption.ofNullable(srid)
+						.map(s -> s.substring(5))
+						.getOrElse("0");
 	}
 
 	@Override
@@ -102,7 +113,7 @@ public abstract class GeometryDataType extends DataType {
 		}
 		
 		GeometryDataType other = (GeometryDataType)obj;
-		return typeClass().equals(other.typeClass()) && m_srid.equals(other.m_srid);
+		return typeClass().equals(other.typeClass()) && Objects.equals(m_srid, other.m_srid);
 	}
 	
 	public static Geometry fromWkt(String wkt) {
@@ -198,18 +209,10 @@ public abstract class GeometryDataType extends DataType {
 	}
 	
 	private static String encodeTypeId(TypeClass tc, String srid) {
-		if ( srid.startsWith("EPSG:") ) {
-			srid = srid.substring(5);
-		}
-		
-		return String.format("%d(%s)", tc.get(), srid);
+		return String.format("%d(%s)", tc.get(), getEpsgCode(srid));
 	}
 	
 	private static String encodeTypeName(TypeClass tc, String srid) {
-		if ( srid.startsWith("EPSG:") ) {
-			srid = srid.substring(5);
-		}
-		
-		return String.format("%s(%s)", tc.name(), srid);
+		return String.format("%s(%s)", tc.name(), getEpsgCode(srid));
 	}
 }

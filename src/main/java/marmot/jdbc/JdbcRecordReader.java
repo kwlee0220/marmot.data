@@ -4,12 +4,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import marmot.Column;
-import marmot.DataSet;
-import marmot.DataSetException;
+import marmot.DefaultRecord;
 import marmot.Record;
+import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
+import marmot.dataset.DataSetException;
 import marmot.stream.AbstractRecordStream;
 import utils.jdbc.JdbcProcessor;
 
@@ -18,11 +19,11 @@ import utils.jdbc.JdbcProcessor;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class JdbcDataSet implements DataSet {
+public class JdbcRecordReader implements RecordReader {
 	private final JdbcRecordAdaptor m_adaptor;
 	private final String m_sql;
 	
-	public JdbcDataSet(JdbcRecordAdaptor adaptor, String tblName) {
+	public JdbcRecordReader(JdbcRecordAdaptor adaptor, String tblName) {
 		m_adaptor = adaptor;
 		m_sql = adaptor.getRecordSchema()
 						.streamColumns()
@@ -48,9 +49,11 @@ public class JdbcDataSet implements DataSet {
 
 	private class StreamImpl extends AbstractRecordStream {
 		private final ResultSet m_rs;
+		private final Record m_record;
 		
 		StreamImpl(ResultSet rs) {
 			m_rs = rs;
+			m_record = DefaultRecord.of(m_adaptor.getRecordSchema());
 		}
 
 		@Override
@@ -64,14 +67,14 @@ public class JdbcDataSet implements DataSet {
 		}
 		
 		@Override
-		public boolean next(Record output) {
+		public Record next() {
 			try {
 				if ( m_rs.next() ) {
-					m_adaptor.loadRecord(m_rs, output);
-					return true;
+					m_adaptor.loadRecord(m_rs, m_record);
+					return m_record;
 				}
 				else {
-					return false;
+					return null;
 				}
 			}
 			catch ( SQLException e ) {

@@ -1,38 +1,58 @@
 package marmot.remote.client;
 
-import marmot.DataSet;
-import marmot.DataSetInfo;
+import java.io.IOException;
+import java.io.InputStream;
+
 import marmot.RecordSchema;
 import marmot.RecordStream;
+import marmot.RecordStreamException;
 import marmot.avro.AvroDeserializer;
+import marmot.dataset.DataSet;
+import marmot.dataset.DataSetInfo;
 
 /**
  * 
  * @author Kang-Woo Lee (ETRI)
  */
 public class GrpcDataSetProxy implements DataSet {
-	private final GrpcDataSetServiceProxy m_service;
-	private final String m_id;
-	private final DataSetInfo m_info;
+	private final GrpcDataSetServerProxy m_service;
+	private DataSetInfo m_info;
 	
-	GrpcDataSetProxy(GrpcDataSetServiceProxy service, String id, DataSetInfo info) {
+	GrpcDataSetProxy(GrpcDataSetServerProxy service, DataSetInfo info) {
 		m_service = service;
-		m_id = id;
 		m_info = info;
 	}
 
 	@Override
-	public RecordSchema getRecordSchema() {
-		return m_info.getRecordSchema();
+	public DataSetInfo getDataSetInfo() {
+		return m_info;
 	}
 
 	@Override
 	public RecordStream read() {
-		return AvroDeserializer.from(m_info.getRecordSchema(), m_service.readDataSet(m_id));
+		RecordSchema schema = m_info.getRecordSchema();
+		InputStream is = m_service.readDataSet(m_info.getId());
+		
+		try {
+			return AvroDeserializer.deserialize(schema, is);
+		}
+		catch ( IOException e ) {
+			throw new RecordStreamException("" + e);
+		}
+	}
+
+	@Override
+	public void write(RecordStream stream) {
+		m_info = m_service.writeDataSet2(m_info.getId(), stream);
+	}
+
+	@Override
+	public void append(RecordStream stream) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("%s[%s]", getClass().getSimpleName(), m_id);
+		return String.format("%s[%s]", getClass().getSimpleName(), m_info.getId());
 	}
 }

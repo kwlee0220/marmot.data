@@ -20,6 +20,7 @@ import marmot.stream.IteratorRecordStream;
 import marmot.stream.PeekableRecordStream;
 import marmot.stream.PipedRecordStream;
 import marmot.stream.PushBackableRecordStream;
+import marmot.stream.StatsCollectingRecordStream;
 import marmot.stream.TakeRecordStream;
 import utils.LoggerSettable;
 import utils.Throwables;
@@ -38,8 +39,20 @@ public interface RecordStream extends AutoCloseable {
 	public RecordSchema getRecordSchema();
 	
 	public void close();
-	public boolean next(Record output);
-	public Record nextCopy();
+	public Record next();
+	
+	public default Record nextCopy() {
+		Record output = next();
+		if ( output != null ) {
+			Record copied = DefaultRecord.of(getRecordSchema());
+			copied.set(output);
+			
+			return copied;
+		}
+		else {
+			return null;
+		}
+	}
 	
 	public default void closeQuietly() {
 		try {
@@ -68,6 +81,10 @@ public interface RecordStream extends AutoCloseable {
 	
 	public default RecordStream take(long count) {
 		return new TakeRecordStream(this, count);
+	}
+	
+	public default StatsCollectingRecordStream collectStats() {
+		return new StatsCollectingRecordStream(this);
 	}
 
 	/**
@@ -246,8 +263,8 @@ public interface RecordStream extends AutoCloseable {
 		}
 
 		try {
-			Record record = DefaultRecord.of(getRecordSchema());
-			while ( next(record) ) {
+			Record record;
+			while ( (record = next()) != null ) {
 				accum = folder.apply(accum, record);
 				if ( accum.equals(stopper) ) {
 					return accum;
@@ -265,8 +282,8 @@ public interface RecordStream extends AutoCloseable {
 		Utilities.checkNotNullArgument(consumer, "consumer is null");
 
 		try {
-			Record record = DefaultRecord.of(getRecordSchema());
-			while ( next(record) ) {
+			Record record;
+			while ( (record = next()) != null ) {
 				consumer.accept(accum, record);
 			}
 			
@@ -277,8 +294,7 @@ public interface RecordStream extends AutoCloseable {
 		}
 	}
 	
-	public default <S> S collectLeftCopy(S accum,
-										BiConsumer<? super S,? super Record> consumer) {
+	public default <S> S collectLeftCopy(S accum, BiConsumer<? super S,? super Record> consumer) {
 		Utilities.checkNotNullArgument(consumer, "consumer is null");
 
 		try {
@@ -327,9 +343,9 @@ public interface RecordStream extends AutoCloseable {
 	public default void forEach(Consumer<? super Record> consumer) {
 		Utilities.checkNotNullArgument(consumer, "consumer is null");
 		
-		Record record = DefaultRecord.of(getRecordSchema());
+		Record record;
 		try {
-			while ( next(record) ) {
+			while ( (record = next()) != null ) {
 				try {
 					consumer.accept(record);
 				}
@@ -398,11 +414,11 @@ public interface RecordStream extends AutoCloseable {
 	}
 	
 	public default long count() {
-		Record record = DefaultRecord.of(getRecordSchema());
+		Record record;
 		
 		try {
 			long cnt = 0;
-			while ( next(record) ) {
+			while ( (record = next()) != null ) {
 				++cnt;
 			}
 			

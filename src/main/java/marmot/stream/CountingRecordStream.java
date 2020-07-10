@@ -34,14 +34,13 @@ public class CountingRecordStream extends AbstractRecordStream {
 	}
 	
 	@Override
-	public boolean next(Record output) {
-		if ( m_stream.next(output) ) {
+	public Record next() {
+		Record record;
+		if ( (record = m_stream.next()) != null ) {
 			++m_count;
-			return true;
 		}
-		else {
-			return false;
-		}
+		
+		return record;
 	}
 	
 	@Override

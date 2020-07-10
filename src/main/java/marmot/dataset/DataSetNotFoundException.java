@@ -1,4 +1,4 @@
-package marmot;
+package marmot.dataset;
 
 /**
  * 

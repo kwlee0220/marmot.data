@@ -32,8 +32,8 @@ public class CloserAttachedRecordStream extends AbstractRecordStream {
 	}
 	
 	@Override
-	public boolean next(Record record) {
-		return m_input.next(record);
+	public Record next() {
+		return m_input.next();
 	}
 	
 	@Override

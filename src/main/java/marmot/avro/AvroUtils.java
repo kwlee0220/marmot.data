@@ -140,6 +140,13 @@ public final class AvroUtils {
 		}
 	}
 	
+	public static void copyToGenericRecord(Record record, GenericRecord grec) {
+		for ( Column col: record.getRecordSchema().getColumns() ) {
+			Object obj = toAvroValue(col.type(), record.get(col.ordinal()));
+			grec.put(col.ordinal(), obj);
+		}
+	}
+	
 	public static GenericRecord toGenericRecord(Record src, Schema avroSchema) {
 		if ( src instanceof AvroRecord ) {
 			return ((AvroRecord)src).getGenericRecord();
@@ -226,7 +233,7 @@ public final class AvroUtils {
 	}
 	
 	private static Schema toGeometrySchema(GeometryDataType geomType) {
-		String name = geomType.typeClass().name() + "_" + geomType.srid().substring(5);
+		String name = geomType.typeClass().name() + "_" + GeometryDataType.getEpsgCode(geomType.srid());
 		return SchemaBuilder.record(name)
 							.fields()
 								.name("wkb").type().bytesType().noDefault()
@@ -240,10 +247,15 @@ public final class AvroUtils {
 		else {
 			int idx = name.lastIndexOf('_');
 			String tcName = name.substring(0, idx);
-			String epsgCode = name.substring(idx+1);
-			
 			GeometryDataType geomType = (GeometryDataType)DataType.fromTypeCodeName(tcName);
-			return geomType.duplicate("EPSG:" + epsgCode);
+			
+			String epsgCode = name.substring(idx+1);
+			if ( !epsgCode.equals("?") ) {
+				return geomType.duplicate("EPSG:" + epsgCode);
+			}
+			else {
+				return geomType;
+			}
 		}
 	}
 	
@@ -265,8 +277,8 @@ public final class AvroUtils {
 													.addToSchema(Schema.create(Schema.Type.INT)));
 	}
 	
-	private static final int DEFAULT_PIPE_SIZE = 64 * 1024;
-	public static InputStream toInputStream(Schema avroSchema, RecordStream stream) {
+	private static final int DEFAULT_PIPE_SIZE = 4 * 1024 * 1024;
+	public static InputStream toSerializedInputStream(Schema avroSchema, RecordStream stream) {
 		return new InputStreamFromOutputStream(os -> {
 			WriteRecordSetToOutStream pump = new WriteRecordSetToOutStream(stream, avroSchema, os);
 			pump.start();
@@ -274,24 +286,30 @@ public final class AvroUtils {
 		}, DEFAULT_PIPE_SIZE);
 	}
 	
-	public static InputStream readSerializedStream(AvroDataSet ds) {
-		return toInputStream(ds.getAvroSchema(), ds.read());
+	public static InputStream readSerializedStream(AvroRecordReader ds) {
+		return toSerializedInputStream(ds.getAvroSchema(), ds.read());
 	}
 	
-	private static class WriteRecordSetToOutStream extends AbstractThreadedExecution<Long> {
+	public static InputStream toSerializedInputStream(RecordStream stream) {
+		Schema avroSchema = AvroUtils.toSchema(stream.getRecordSchema());
+		return toSerializedInputStream(avroSchema, stream);
+	}
+	
+	private static class WriteRecordSetToOutStream extends AbstractThreadedExecution<Void> {
 		private final RecordStream m_stream;
-		private final AvroRawDataSetWriter m_writer;
+		private final AvroSerializer m_writer;
 		
 		private WriteRecordSetToOutStream(RecordStream stream, Schema avroSchema, OutputStream os) {
 			m_stream = stream;
-			m_writer = new AvroRawDataSetWriter(avroSchema, os);
+			m_writer = new AvroSerializer(avroSchema, os);
 			
 			setLogger(LoggerFactory.getLogger(WriteRecordSetToOutStream.class));
 		}
 
 		@Override
-		protected Long executeWork() throws CancellationException, Exception {
-			return m_writer.write(m_stream);
+		protected Void executeWork() throws CancellationException, Exception {
+			m_writer.write(m_stream);
+			return null;
 		}
 	}
 }

@@ -100,13 +100,13 @@ public class ColumnSelector implements Serializable {
 	
 	private static class NestedLoopRecordStream extends AbstractRecordStream {
 		private final RecordStream m_inners;
-		private final Record m_innerRecord;
+		private final Record m_output;
 		private final ColumnSelector m_selector;
 		private final Map<String,Record> m_binding = Maps.newHashMap();
 		
 		private NestedLoopRecordStream(Record outer, RecordStream inners, ColumnSelector selector) {
 			m_inners = inners;
-			m_innerRecord = DefaultRecord.of(inners.getRecordSchema());
+			m_output = DefaultRecord.of(selector.getRecordSchema());
 			m_selector = selector;
 			m_binding.put("left", outer);
 		}
@@ -119,15 +119,16 @@ public class ColumnSelector implements Serializable {
 		}
 		
 		@Override
-		public boolean next(Record output) {
-			if ( m_inners.next(m_innerRecord) ) {
-				m_binding.put("right", m_innerRecord);
-				m_selector.select(m_binding, output);
+		public Record next() {
+			Record innerRecord;
+			if ( (innerRecord = m_inners.next()) != null ) {
+				m_binding.put("right", innerRecord);
+				m_selector.select(m_binding, m_output);
 				
-				return true;
+				return m_output;
 			}
 			else {
-				return false;
+				return null;
 			}
 		}
 	}

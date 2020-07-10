@@ -43,17 +43,17 @@ public class PeekableRecordStream extends AbstractRecordStream {
 	}
 
 	@Override
-	public boolean next(Record output) {
+	public Record next() {
 		checkNotClosed();
 		
 		if ( m_peeked != null ) {
-			output.set(m_peeked);
+			Record peeked = m_peeked;
 			m_peeked = null;
 			
-			return true;
+			return peeked;
 		}
 		else {
-			return m_input.next(output);
+			return m_input.next();
 		}
 	}
 	
