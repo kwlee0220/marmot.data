@@ -82,6 +82,7 @@ public class PBValueProtos {
 			case ENVELOPE:
 				builder.setEnvelopeValue(PBDataSetUtils.toProto((Envelope)obj));
 				break;
+			case POINT:
 			case MULTI_POINT:
 			case LINESTRING:
 			case MULTI_LINESTRING:
@@ -92,7 +93,7 @@ public class PBValueProtos {
 				builder.setGeometryValue(PBDataSetUtils.toProto((Geometry)obj));
 				break;
 			default:
-				throw new AssertionError();
+				throw new AssertionError("tc=" + tc);
 		}
 		
 		return builder.build();
@@ -153,7 +154,7 @@ public class PBValueProtos {
 			builder.setTimeValue(((LocalTime)obj).toString());
 		}
 		else {
-			throw new AssertionError();
+			throw new AssertionError("unknown object: " + obj);
 		}
 		
 		return builder.build();
@@ -204,7 +205,7 @@ public class PBValueProtos {
 			case VALUE_NOT_SET:
 				return Tuple.of(null, null);
 			default:
-				throw new AssertionError();
+				throw new AssertionError("unknown ValueCase: " + proto.getValueCase());
 		}
 	}
 }
