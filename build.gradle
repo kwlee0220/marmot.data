@@ -1,6 +1,8 @@
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 apply plugin: 'com.google.protobuf'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'nebula-aggregate-javadocs'	// gradle aggregateJavadocs
 
 buildscript {
 	repositories {
@@ -9,6 +11,8 @@ buildscript {
 	}
 	dependencies {
 		classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.7'
+		classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+		classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
 	}
 }
 
@@ -29,8 +33,12 @@ sourceSets {
 }
 
 repositories {
+//	jcenter()
     mavenLocal()
-	jcenter()
+	maven {
+		url "http://repo.osgeo.org/repository/release/"
+	}
+    mavenCentral()
 }
 
 protobuf {
@@ -50,14 +58,20 @@ protobuf {
 }
 
 ext {
+	geotools_version = '19.3'
 	jts_version = '1.14.0'
+	
 	avro_version = '1.9.2'
+//	avro_version = '1.7.7'
 	snappy_java_version = '1.1.7.5'
 	antlr4_version = '4.7'
 	postgis_jdbc_version = '2.2.1'
 	
 	grpc_version = '1.23.0'
 	protobuf_version = '3.9.1'
+	
+	commons_io_version = '2.6'
+	commons_csv_version = '1.5'
 	
 	junit_version = '4.12'
 	mockito_version = '3.2.4'
@@ -66,13 +80,15 @@ ext {
 
 dependencies {
 	compile project(":utils")
-	compile project(":utils.grpc")
+	compile project(":utils.geo")
 	
-	// JTS
+	// GeoTools & JTS
+	implementation	"org.geotools:gt-epsg-hsql:${geotools_version}"
+	implementation "org.geotools:gt-shapefile:${geotools_version}"
 	api "com.vividsolutions:jts-core:${jts_version}"
 	
 	// Avro
-	api "org.apache.avro:avro:${avro_version}"
+	compile "org.apache.avro:avro:${avro_version}"
 	implementation "org.xerial.snappy:snappy-java:${snappy_java_version}"
 	
 	// ANTLR
@@ -82,15 +98,32 @@ dependencies {
 //	compile "org.postgresql:postgresql:${postgresql_version}"
 	implementation "net.postgis:postgis-jdbc:${postgis_jdbc_version}"
 	
+	// apache commons
+	implementation "commons-io:commons-io:${commons_io_version}"
+	implementation "org.apache.commons:commons-csv:${commons_csv_version}"
+	
 	// grpc
-	implementation "io.grpc:grpc-netty-shaded:${grpc_version}"
-	implementation "io.grpc:grpc-protobuf:${grpc_version}"
-	implementation "io.grpc:grpc-stub:${grpc_version}"
-	implementation "com.google.protobuf:protobuf-java-util:${protobuf_version}"
+	api "io.grpc:grpc-netty-shaded:${grpc_version}"
+	api "io.grpc:grpc-protobuf:${grpc_version}"
+	api "io.grpc:grpc-stub:${grpc_version}"
+	api "com.google.protobuf:protobuf-java-util:${protobuf_version}"
 	
 	testImplementation "junit:junit:${junit_version}"
 	testImplementation "org.mockito:mockito-core:${mockito_version}"
 	testImplementation "org.hamcrest:hamcrest-all:${hamcrest_version}"
+}
+
+shadowJar {
+	classifier 'all'
+	
+	mergeServiceFiles()
+	
+	exclude 'META-INF/*.SF'
+	exclude 'META-INF/*.DSA'
+	exclude 'META-INF/*.RSA'
+	
+	relocate 'com.fasterxml', 'shadow.com.fasterxml'
+	relocate 'org.apache.http', "shadow.org.apache.http"	// 포도 업체때문에 conflict를 회피하려고
 }
 
 task sourceJar(type: Jar) {
@@ -105,15 +138,17 @@ task javadocJar(type: Jar) {
 artifacts {
 	archives sourceJar
 	archives javadocJar
+	archives shadowJar
 }
 
 publishing {
 	publications {
-		commonGrpc(MavenPublication) {
+		marmotData(MavenPublication) {
 			from components.java
 			
 			artifact sourceJar
 			artifact javadocJar
+			artifact shadowJar
 		}
 	}
 }

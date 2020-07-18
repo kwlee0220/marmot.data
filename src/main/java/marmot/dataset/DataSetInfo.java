@@ -29,7 +29,6 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 	@Nullable private Envelope m_bounds;
 	private long m_count = 0;
 	
-	private final String m_filePath;				// HDFS에 저장된 경로명
 	private long m_updateEpochMillis;
 	
 	public DataSetInfo(String id, RecordSchema schema) {
@@ -39,16 +38,6 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 		m_schema = schema;
 		m_count = 0;
 		m_bounds = null;
-		m_filePath = null;
-	}
-	
-	DataSetInfo(String id, RecordSchema schema, String filePath) {
-		Utilities.checkNotNullArgument(schema, "DataSet's RecordSchema should not be null.");
-		Utilities.checkNotNullArgument(filePath, "DataSet's file path should not be null.");
-		
-		m_id = id;
-		m_schema = schema;
-		m_filePath = filePath;
 	}
 	
 	public String getId() {
@@ -75,10 +64,6 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 		m_count = count;
 	}
 	
-	public String getFilePath() {
-		return m_filePath;
-	}
-	
 	public long getUpdateEpochMillis() {
 		return m_updateEpochMillis;
 	}
@@ -86,9 +71,8 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 	public static DataSetInfo fromProto(DataSetInfoProto proto) {
 		String id = proto.getId();
 		RecordSchema schema = RecordSchema.fromTypeId(proto.getRecordSchema());
-		String filePath = proto.getFilePath();
 		
-		DataSetInfo dsInfo = new DataSetInfo(id, schema, filePath);
+		DataSetInfo dsInfo = new DataSetInfo(id, schema);
 		dsInfo.setRecordCount(proto.getCount());
 		
 		switch ( proto.getOptionalBoundsCase() ) {
@@ -108,8 +92,7 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 		DataSetInfoProto.Builder builder = DataSetInfoProto.newBuilder()
 															.setId(m_id)
 															.setRecordSchema(m_schema.toTypeId())
-															.setCount(m_count)
-															.setFilePath(m_filePath);
+															.setCount(m_count);
 		if ( m_bounds != null ) {
 			builder.setBounds(PBDataSetUtils.toProto(m_bounds));
 		}
@@ -119,7 +102,7 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 	
 	@Override
 	public String toString() {
-		return String.format("%s[%s, count=%d, path=%s]", m_id, m_schema, m_count, m_filePath);
+		return String.format("%s[%s, count=%d]", m_id, m_schema, m_count);
 	}
 	
 	@Override

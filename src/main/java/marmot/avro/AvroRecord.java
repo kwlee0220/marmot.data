@@ -45,6 +45,10 @@ class AvroRecord implements Record {
 		m_grecord = grec;
 		Arrays.fill(m_cache, null);
 	}
+	
+	public void clearCache() {
+		Arrays.fill(m_cache, null);
+	}
 
 	@Override
 	public Object get(int index) {

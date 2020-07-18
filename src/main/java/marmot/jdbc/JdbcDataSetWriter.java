@@ -44,7 +44,7 @@ public class JdbcDataSetWriter implements RecordWriter {
 	}
 
 	@Override
-	public void write(RecordStream stream) {
+	public long write(RecordStream stream) {
 		Utilities.checkNotNullArgument(stream, "rset is null");
 		
 		String valuesExpr = createInsertValueExpr(m_adaptor);
@@ -55,8 +55,7 @@ public class JdbcDataSetWriter implements RecordWriter {
 			PreparedStatement pstmt = conn.prepareStatement(insertStmtStr);
 			s_logger.info("connected: {}", this);
 			
-			Record record;
-			while ( (record = stream.nextCopy()) != null ) {
+			for ( Record record = stream.nextCopy(); record != null; record = stream.nextCopy() ) {
 				try {
 					m_adaptor.storeRecord(record, pstmt);
 					pstmt.addBatch();
@@ -85,6 +84,8 @@ public class JdbcDataSetWriter implements RecordWriter {
 			throw new RecordStreamException("" + e);
 		}
 		s_logger.info("inserted: {} records", count.get());
+		
+		return count.get();
 	}
 
 	@Override

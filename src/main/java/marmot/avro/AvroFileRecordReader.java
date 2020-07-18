@@ -3,12 +3,18 @@ package marmot.avro;
 import java.io.File;
 import java.io.IOException;
 
+import javax.annotation.Nullable;
+
+import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.SeekableFileInput;
 import org.apache.avro.file.SeekableInput;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
+
+import marmot.RecordReader;
+import marmot.RecordSchema;
 
 
 /**

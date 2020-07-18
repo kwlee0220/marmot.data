@@ -57,6 +57,7 @@ public class AvroDeserializer extends AbstractRecordStream {
 		m_avroSchema = AvroUtils.toSchema(schema);
 		m_schema = schema;
 		m_is = is;
+//		m_is = LZ4FrameInputStream(is);
 
 		m_record = new AvroRecord(m_schema, m_avroSchema);
 		m_reader = new GenericDatumReader<GenericRecord>(m_avroSchema);

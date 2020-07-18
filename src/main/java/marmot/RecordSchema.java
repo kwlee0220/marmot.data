@@ -51,8 +51,10 @@ public class RecordSchema implements Serializable  {
 
 		int i = 0;
 		for ( Column col: builder.m_columns.values() ) {
-			m_colMap.put(col.name(), col);
-			m_columns[i++] = col;
+			Column copy = new Column(col.name(), col.type(), i);
+			
+			m_colMap.put(col.name(), copy);
+			m_columns[i++] = copy;
 		}
 	}
 	

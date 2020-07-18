@@ -9,11 +9,13 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import marmot.optor.FStreamConcatedDataSet;
-import marmot.optor.FilterScript;
-import marmot.optor.FilteredDataSet;
+import marmot.optor.FilteredReader;
 import marmot.optor.MultiColumnKey;
 import marmot.optor.PeekingDataSet;
-import marmot.optor.ProjectedDataSet;
+import marmot.optor.ProjectedReader;
+import marmot.optor.ScriptFilteredReader;
+import marmot.optor.TakenReader;
+import marmot.optor.geo.TransformSridReader;
 import marmot.support.RecordListDataSource;
 import marmot.support.RecordScript;
 import utils.Utilities;
@@ -36,25 +38,33 @@ public interface RecordReader {
 	}
 	
 	public default RecordReader filter(Predicate<? super Record> pred) {
-		return new FilteredDataSet(this, pred);
+		return new FilteredReader(this, pred);
 	}
 
 	public default RecordReader filterScript(String predicate) {
 		return filterScript(RecordScript.of(predicate));
 	}
 	public default RecordReader filterScript(RecordScript predicate) {
-		return new FilterScript(this, predicate);
+		return new ScriptFilteredReader(this, predicate);
 	}
 
 	public default RecordReader project(String... cols) {
-		return new ProjectedDataSet(this, MultiColumnKey.of(cols));
+		return new ProjectedReader(this, MultiColumnKey.of(cols));
 	}
 	public default RecordReader project(List<String> cols) {
-		return new ProjectedDataSet(this, MultiColumnKey.ofNames(cols));
+		return new ProjectedReader(this, MultiColumnKey.ofNames(cols));
+	}
+	
+	public default RecordReader take(long count) {
+		return new TakenReader(this, count);
 	}
 	
 	public default RecordReader peek(Consumer<Record> action) {
 		return new PeekingDataSet(this, action);
+	}
+	
+	public default RecordReader transformSrid(String tarSrid) {
+		return new TransformSridReader(this, "the_geom", tarSrid);
 	}
 	
 	public static RecordReader concat(RecordSchema schema, FStream<? extends RecordReader> datasets) {

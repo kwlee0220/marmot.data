@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import com.google.common.collect.Lists;
 
 import io.reactivex.Observable;
+import marmot.optor.TakenReader;
 import marmot.stream.AutoClosingRecordStream;
 import marmot.stream.CloserAttachedRecordStream;
 import marmot.stream.CountingRecordStream;
@@ -21,7 +22,6 @@ import marmot.stream.PeekableRecordStream;
 import marmot.stream.PipedRecordStream;
 import marmot.stream.PushBackableRecordStream;
 import marmot.stream.StatsCollectingRecordStream;
-import marmot.stream.TakeRecordStream;
 import utils.LoggerSettable;
 import utils.Throwables;
 import utils.Utilities;
@@ -80,7 +80,7 @@ public interface RecordStream extends AutoCloseable {
 	}
 	
 	public default RecordStream take(long count) {
-		return new TakeRecordStream(this, count);
+		return new TakenReader.ResultStream(this, count);
 	}
 	
 	public default StatsCollectingRecordStream collectStats() {

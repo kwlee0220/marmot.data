@@ -2,13 +2,14 @@ package marmot.avro;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.avro.LogicalType;
-import org.apache.avro.LogicalTypes;
 import org.apache.avro.LogicalTypes.Date;
 import org.apache.avro.LogicalTypes.TimeMillis;
 import org.apache.avro.LogicalTypes.TimestampMillis;
@@ -18,7 +19,6 @@ import org.apache.avro.Schema.Type;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -34,9 +34,10 @@ import marmot.type.GeometryDataType;
 import marmot.type.PrimitiveDataType;
 import marmot.type.TypeClass;
 import utils.LocalDateTimes;
+import utils.Throwables;
 import utils.Utilities;
-import utils.async.AbstractThreadedExecution;
-import utils.io.InputStreamFromOutputStream;
+import utils.func.Tuple;
+import utils.io.IOUtils;
 import utils.stream.FStream;
 
 /**
@@ -64,8 +65,12 @@ public final class AvroUtils {
 			}
 			else if ( dtype.isGeometryType() ) {
 				GeometryDataType geomType = (GeometryDataType)dtype;
-				Schema colSchema = toGeometrySchema(geomType);
-				fields.add(new Field(col.name(), colSchema));
+
+				Schema fieldSchema = Schema.create(Type.BYTES);
+				fieldSchema.addProp("specific", dtype.typeClass().name());
+				fieldSchema.addProp("srid", geomType.srid());
+				fieldSchema = Schema.createUnion(fieldSchema, Schema.create(Type.NULL));
+				fields.add(new Field(col.name(), fieldSchema));
 			}
 			else {
 				throw new AssertionError();
@@ -83,13 +88,18 @@ public final class AvroUtils {
 	}
 	
 	private static DataType toColumnDataType(Schema schema) {
+		if ( schema.isUnion() ) {
+			schema = schema.getTypes().get(0);
+		}
+		
 		switch ( schema.getType() ) {
 			case STRING:
 				return DataType.STRING;
 			case DOUBLE:
 				return DataType.DOUBLE;
 			case INT:
-				return DataType.INT;
+				TypeClass tc = TypeClass.valueOf(schema.getProp("specific").toUpperCase());
+				return DataType.fromTypeCode(tc);
 			case LONG:
 				LogicalType ltype = schema.getLogicalType();
 				if ( ltype != null ) {
@@ -123,7 +133,17 @@ public final class AvroUtils {
 			case FLOAT:
 				return DataType.FLOAT;
 			case BYTES:
-				return DataType.BINARY;
+				String specific = schema.getProp("specific");
+				if ( specific == null ) {
+					return DataType.BINARY;
+				};
+				String srid = schema.getProp("srid");
+				if ( srid != null ) {
+					GeometryDataType gtype = (GeometryDataType)DataType.fromTypeCodeName(specific);
+					return gtype.duplicate(srid);
+				}
+				throw new IllegalArgumentException("unexpected binary type: specific=" + specific);
+				
 			default:
 				throw new IllegalArgumentException("unexpected field type: " + schema);
 		}
@@ -163,13 +183,11 @@ public final class AvroUtils {
 	}
 	
 	static Object toAvroValue(DataType type, Object value) {
+		if ( value == null ) {
+			return null;
+		}
 		if ( type.isGeometryType() ) {
-			Schema geomSchema = toGeometrySchema((GeometryDataType)type);
-			GenericRecord rec = new GenericData.Record(geomSchema);
-			byte[] wkb = GeometryDataType.toWkb((Geometry)value);
-			rec.put(0, ByteBuffer.wrap(wkb));
-			
-			return rec;
+			return ByteBuffer.wrap(GeometryDataType.toWkb((Geometry)value));
 		}
 		
 		if ( type instanceof PrimitiveDataType ) {
@@ -179,11 +197,13 @@ public final class AvroUtils {
 				case DOUBLE:
 				case FLOAT:
 				case LONG:
-				case SHORT:
-				case BYTE:
 				case BINARY:
 				case BOOLEAN:
 					return value;
+				case SHORT:
+					return ((Short)value).intValue();
+				case BYTE:
+					return ((Byte)value).intValue();
 				case ENVELOPE:
 					throw new AssertionError();
 				case COORDINATE:
@@ -201,7 +221,7 @@ public final class AvroUtils {
 	
 	static Object fromAvroValue(DataType type, Object value) {
 		if ( type.isGeometryType() ) {
-			ByteBuffer wkb = (ByteBuffer)((GenericRecord)value).get(0);
+			ByteBuffer wkb = (ByteBuffer)value;
 			return GeometryDataType.fromWkb(wkb.array());
 		}
 
@@ -212,11 +232,13 @@ public final class AvroUtils {
 				case DOUBLE:
 				case FLOAT:
 				case LONG:
-				case SHORT:
-				case BYTE:
 				case BINARY:
 				case BOOLEAN:
 					return value;
+				case SHORT:
+					return (short)value;
+				case BYTE:
+					return (byte)value;
 				case ENVELOPE:
 					throw new AssertionError();
 				case COORDINATE:
@@ -259,57 +281,52 @@ public final class AvroUtils {
 		}
 	}
 	
+	private static Schema createNullableFieldSchema(Schema.Type type, String specific) {
+		Schema schema = Schema.create(type);
+		if ( specific != null ) {
+			schema.addProp("specific", specific);
+		}
+		return Schema.createUnion(schema, Schema.create(Type.NULL));
+	}
+	
 	private static final Map<TypeClass, Schema> PRIMITIVES = Maps.newHashMap();
 	static {
-		PRIMITIVES.put(TypeClass.STRING, Schema.create(Type.STRING));
-		PRIMITIVES.put(TypeClass.INT, Schema.create(Type.INT));
-		PRIMITIVES.put(TypeClass.LONG, Schema.create(Type.LONG));
-		PRIMITIVES.put(TypeClass.DOUBLE, Schema.create(Type.DOUBLE));
-		PRIMITIVES.put(TypeClass.FLOAT, Schema.create(Type.FLOAT));
-		PRIMITIVES.put(TypeClass.BOOLEAN, Schema.create(Type.BOOLEAN));
-		PRIMITIVES.put(TypeClass.BINARY, Schema.create(Type.BYTES));
+		PRIMITIVES.put(TypeClass.STRING, 
+						Schema.createUnion(Schema.create(Type.STRING), Schema.create(Type.NULL)));
+		PRIMITIVES.put(TypeClass.INT, createNullableFieldSchema(Type.INT, TypeClass.INT.name()));
+		PRIMITIVES.put(TypeClass.SHORT, createNullableFieldSchema(Type.INT, TypeClass.SHORT.name()));
+		PRIMITIVES.put(TypeClass.BYTE, createNullableFieldSchema(Type.INT, TypeClass.BYTE.name()));
+		PRIMITIVES.put(TypeClass.LONG, createNullableFieldSchema(Type.LONG, TypeClass.LONG.name()));
+		PRIMITIVES.put(TypeClass.DOUBLE, createNullableFieldSchema(Type.DOUBLE, null));
+		PRIMITIVES.put(TypeClass.FLOAT, createNullableFieldSchema(Type.FLOAT, null));
+		PRIMITIVES.put(TypeClass.BOOLEAN, createNullableFieldSchema(Type.BOOLEAN, null));
+		PRIMITIVES.put(TypeClass.BINARY, createNullableFieldSchema(Type.BYTES, null));
 		
-		PRIMITIVES.put(TypeClass.DATETIME, LogicalTypes.timestampMillis()
-														.addToSchema(Schema.create(Schema.Type.LONG)));
-		PRIMITIVES.put(TypeClass.TIME, LogicalTypes.timeMillis()
-													.addToSchema(Schema.create(Schema.Type.INT)));
-		PRIMITIVES.put(TypeClass.DATE, LogicalTypes.date()
-													.addToSchema(Schema.create(Schema.Type.INT)));
+		PRIMITIVES.put(TypeClass.DATETIME, createNullableFieldSchema(Type.LONG, TypeClass.DATETIME.name()));
+		PRIMITIVES.put(TypeClass.TIME, createNullableFieldSchema(Type.LONG, TypeClass.TIME.name()));
+		PRIMITIVES.put(TypeClass.DATE, createNullableFieldSchema(Type.LONG, TypeClass.DATE.name()));
 	}
 	
-	private static final int DEFAULT_PIPE_SIZE = 4 * 1024 * 1024;
+	private static final int DEFAULT_PIPE_SIZE = 128 * 1024;
 	public static InputStream toSerializedInputStream(Schema avroSchema, RecordStream stream) {
-		return new InputStreamFromOutputStream(os -> {
-			WriteRecordSetToOutStream pump = new WriteRecordSetToOutStream(stream, avroSchema, os);
-			pump.start();
-			return pump;
-		}, DEFAULT_PIPE_SIZE);
+		Tuple<PipedOutputStream,PipedInputStream> pipe = IOUtils.pipe(DEFAULT_PIPE_SIZE);
+		CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+			try ( OutputStream os = pipe._1 ) {
+				new AvroSerializer(avroSchema, os).write(stream);
+			}
+			catch ( Exception e ) {
+				Throwables.sneakyThrow(e);
+			}
+		});
+		return pipe._2;
 	}
 	
-	public static InputStream readSerializedStream(AvroRecordReader ds) {
+	public static InputStream toSerializedInputStream(AvroRecordReader ds) {
 		return toSerializedInputStream(ds.getAvroSchema(), ds.read());
 	}
 	
 	public static InputStream toSerializedInputStream(RecordStream stream) {
 		Schema avroSchema = AvroUtils.toSchema(stream.getRecordSchema());
 		return toSerializedInputStream(avroSchema, stream);
-	}
-	
-	private static class WriteRecordSetToOutStream extends AbstractThreadedExecution<Void> {
-		private final RecordStream m_stream;
-		private final AvroSerializer m_writer;
-		
-		private WriteRecordSetToOutStream(RecordStream stream, Schema avroSchema, OutputStream os) {
-			m_stream = stream;
-			m_writer = new AvroSerializer(avroSchema, os);
-			
-			setLogger(LoggerFactory.getLogger(WriteRecordSetToOutStream.class));
-		}
-
-		@Override
-		protected Void executeWork() throws CancellationException, Exception {
-			m_writer.write(m_stream);
-			return null;
-		}
 	}
 }

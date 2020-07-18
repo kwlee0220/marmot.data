@@ -5,7 +5,6 @@ import static utils.grpc.PBUtils.ERROR;
 import static utils.grpc.PBUtils.STRING_RESPONSE;
 import static utils.grpc.PBUtils.VOID_RESPONSE;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -20,7 +19,6 @@ import io.grpc.stub.StreamObserver;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.avro.AvroDeserializer;
-import marmot.avro.AvroFileRecordReader;
 import marmot.avro.AvroUtils;
 import marmot.dataset.DataSet;
 import marmot.dataset.DataSetExistsException;
@@ -258,11 +256,11 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 		StreamDownloadSender sender = new StreamDownloadSender(channel) {
 			@Override
 			protected InputStream getStream(ByteString req) throws Exception {
-				String path = PBUtils.STRING(req);
-				AvroFileRecordReader reader = new AvroFileRecordReader(new File(path));
+				String dsId = PBUtils.STRING(req);
+				DataSet ds = m_server.getDataSet(dsId);
 
-				s_logger.trace("download: path={}", path);
-				return AvroUtils.readSerializedStream(reader);
+				s_logger.trace("download: dataset={}", dsId);
+				return AvroUtils.toSerializedInputStream(ds.read());
 			}
 		};
 		CompletableFuture.runAsync(sender, m_executor);
@@ -279,7 +277,7 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 				DataSet ds = m_server.getDataSet(dsId);
 				RecordSchema schema = ds.getRecordSchema();
 
-				s_logger.debug("writing dataset[{}] to path={}...", dsId, ds.getDataSetInfo().getFilePath());
+				s_logger.debug("writing dataset: id={}...", dsId);
 				RecordStream input = AvroDeserializer.deserialize(schema, is);
 				ds.write(input);
 				

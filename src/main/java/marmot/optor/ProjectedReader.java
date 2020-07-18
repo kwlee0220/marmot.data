@@ -15,7 +15,7 @@ import utils.Utilities;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class ProjectedDataSet implements RecordReader {
+public class ProjectedReader implements RecordReader {
 	private final RecordReader m_input;
 	private final String m_columnSelection;
 	
@@ -29,7 +29,7 @@ public class ProjectedDataSet implements RecordReader {
 	 * 
 	 * @param	columnSelection	projection 연산에 사용될 컬럼들의 이름 배열.
 	 */
-	public ProjectedDataSet(RecordReader input, String columnSelection) {
+	public ProjectedReader(RecordReader input, String columnSelection) {
 		Utilities.checkArgument(columnSelection != null, "Column seelection expression is null");
 
 		m_input = input;
@@ -38,7 +38,7 @@ public class ProjectedDataSet implements RecordReader {
 		m_schema = m_selector.getRecordSchema();
 	}
 	
-	public ProjectedDataSet(RecordReader input, MultiColumnKey keys) {
+	public ProjectedReader(RecordReader input, MultiColumnKey keys) {
 		this(input, keys.streamKeyColumns().map(KeyColumn::name).join(","));
 	}
 

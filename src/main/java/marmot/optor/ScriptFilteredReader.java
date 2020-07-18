@@ -22,13 +22,13 @@ import utils.Utilities;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class FilterScript implements RecordReader {
-	private static final Logger s_logger = LoggerFactory.getLogger(FilterScript.class);
+public class ScriptFilteredReader implements RecordReader {
+	private static final Logger s_logger = LoggerFactory.getLogger(ScriptFilteredReader.class);
 	
 	private final RecordReader m_input;
 	private final RecordScript m_script;
 
-	public FilterScript(RecordReader input, RecordScript script) {
+	public ScriptFilteredReader(RecordReader input, RecordScript script) {
 		Utilities.checkNotNullArgument(script, "predicate is null");
 		
 		m_input = input;
@@ -52,13 +52,11 @@ public class FilterScript implements RecordReader {
 	
 	private static class StreamImpl extends AbstractRecordStream {
 		private final RecordStream m_input;
-		private final Record m_inputRecord;
 		private final RecordScriptExecution m_filterExec;
 		private final ColumnVariableResolverFactory m_vrFact;
 		
 		private StreamImpl(RecordStream input, RecordScript script) {
 			m_input = input;
-			m_inputRecord = DefaultRecord.of(input.getRecordSchema());
 			
 			m_filterExec = RecordScriptExecution.of(script);
 			Map<String,Object> args = m_filterExec.getArgumentAll();

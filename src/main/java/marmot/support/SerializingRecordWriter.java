@@ -32,12 +32,12 @@ public abstract class SerializingRecordWriter implements RecordWriter {
 	}
 
 	@Override
-	public void write(RecordStream stream) {
+	public long write(RecordStream stream) {
 		RecordSchema schema = stream.getRecordSchema();
 		
 		try ( ObjectOutputStream oos = getOutputStream(schema) ) {
-			Record record;
-			while ( (record = stream.next()) != null ) {
+			long count = 0;
+			for ( Record record = stream.next(); record != null; record = stream.next() ) {
 				oos.writeByte(1);
 				for ( int i =0; i < schema.getColumnCount(); ++i ) {
 					DataType colType = schema.getColumnAt(i).type();
@@ -45,6 +45,8 @@ public abstract class SerializingRecordWriter implements RecordWriter {
 				}
 			}
 			oos.writeByte(0);
+			
+			return count;
 		}
 		catch ( IOException e ) {
 			throw new DataSetException("" + e);

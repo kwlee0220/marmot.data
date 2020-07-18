@@ -1,5 +1,6 @@
 package marmot.pb;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
@@ -22,9 +23,13 @@ import utils.io.InputStreamFromOutputStream;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class PBDataSets {
-	private PBDataSets() {
+public class PBRecordStreams {
+	private PBRecordStreams() {
 		throw new AssertionError("Should not be called here: class=" + getClass());
+	}
+	
+	public static PBFileRecordWriter writer(File file) {
+		return new PBFileRecordWriter(file);
 	}
 	
 	private static final int DEFAULT_PIPE_SIZE = 64 * 1024;

@@ -17,9 +17,6 @@ import marmot.RecordSchema;
 public class AvroBytesRecordWriter extends AvroRecordWriter {
 	private byte[] m_bytes;
 	
-	public AvroBytesRecordWriter() {
-	}
-	
 	public byte[] getBytes() {
 		return m_bytes;
 	}

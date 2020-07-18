@@ -11,13 +11,17 @@ import marmot.RecordStream;
  */
 public abstract class RecordLevelTransformedStream extends AbstractRecordStream {
 	private final RecordStream m_stream;
-	private final Record m_output;
+	private Record m_output;
 	
 	abstract protected boolean transform(Record input, Record output);
 	
 	protected RecordLevelTransformedStream(RecordStream stream) {
 		m_stream = stream;
-		m_output = DefaultRecord.of(stream.getRecordSchema());
+	}
+
+	@Override
+	protected void closeInGuard() throws Exception {
+		m_stream.close();
 	}
 	
 	public RecordSchema getInputRecordSchema() {
@@ -26,6 +30,10 @@ public abstract class RecordLevelTransformedStream extends AbstractRecordStream 
 	
 	@Override
 	public Record next() {
+		if ( m_output == null ) {
+			m_output = DefaultRecord.of(getRecordSchema());
+		}
+		
 		Record record;
 		while ( (record = m_stream.next()) != null ) {
 			try {

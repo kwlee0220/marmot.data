@@ -76,7 +76,7 @@ public abstract class GeometryDataType extends DataType {
 	
 	@Override
 	public String toInstanceString(Object geom) {
-		Utilities.checkNotNullArgument(geom, "input Geometryis null");
+		Utilities.checkNotNullArgument(geom, "input Geometry is null");
 		Utilities.checkArgument(geom instanceof Geometry, "input is not Geometry");
 		
 		return toWkt((Geometry)geom);
@@ -136,7 +136,7 @@ public abstract class GeometryDataType extends DataType {
 	}
 	
 	public static String toWkt(Geometry geom) {
-		Utilities.checkNotNullArgument(geom, "input Geometryis null");
+		Utilities.checkNotNullArgument(geom, "input Geometry is null");
 		
 		return (geom != null) ? new WKTWriter().write((Geometry)geom) : null;
 	}
@@ -175,7 +175,7 @@ public abstract class GeometryDataType extends DataType {
 	}
 	
 	public static byte[] toWkb(Geometry geom) {
-		Utilities.checkNotNullArgument(geom, "input Geometryis null");
+		Utilities.checkNotNullArgument(geom, "input Geometry is null");
 		Utilities.checkArgument(geom instanceof Geometry, "input is not Geometry");
 		
 		return (geom != null) ? new WKBWriter().write(geom) : null;

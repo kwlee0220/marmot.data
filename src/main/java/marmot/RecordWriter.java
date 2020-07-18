@@ -11,5 +11,5 @@ public interface RecordWriter {
 	 * @param dataset	저장할 데이터 세트 객체.
 	 * @return	저장된 레코드의 갯수.
 	 */
-	public void write(RecordStream stream);
+	public long write(RecordStream stream);
 }

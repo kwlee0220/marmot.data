@@ -8,10 +8,9 @@ import org.apache.log4j.PropertyConfigurator;
 
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import marmot.avro.LfsAvroDataSetServer;
 import marmot.dataset.DataSetServer;
-import marmot.dataset.LocalFsCatalog;
-import picocli.CommandLine.Command;
+import marmot.dataset.LfsAvroDataSetServer;
+import marmot.file.FileServer;
 import utils.NetUtils;
 import utils.jdbc.JdbcProcessor;
 
@@ -26,6 +25,7 @@ public class GrpcLfsDataSetServerMain {
 	
 	private final int m_port;
 	private GrpcDataSetServiceServant m_servant;
+	private GrpcFileServiceServant m_fileServant;
 	
 	public static final void main(String... args) throws Exception {
 		PropertyConfigurator.configure("log4j.properties");
@@ -36,16 +36,16 @@ public class GrpcLfsDataSetServerMain {
 		int port = ( args.length > 0 ) ? Integer.parseInt(args[0]) : DEFAULT_PORT;
 		
 		JdbcProcessor jdbc = JdbcProcessor.parseString(JDBC_STR);
-		LocalFsCatalog catalog = new LocalFsCatalog(STORE_ROOT, jdbc);
-		DataSetServer server = new LfsAvroDataSetServer(catalog);
-		GrpcLfsDataSetServerMain main = new GrpcLfsDataSetServerMain(port, server);
+		DataSetServer server = new LfsAvroDataSetServer(jdbc, STORE_ROOT);
+		GrpcLfsDataSetServerMain main = new GrpcLfsDataSetServerMain(port, server, null);
 		
 		main.start();
 	}
 	
-	private GrpcLfsDataSetServerMain(int port, DataSetServer server) {
+	private GrpcLfsDataSetServerMain(int port, DataSetServer server, FileServer fileServer) {
 		m_port = port;
 		m_servant = new GrpcDataSetServiceServant(server);
+		m_fileServant = new GrpcFileServiceServant(fileServer);
 	}
 	
 	private void start() throws IOException, InterruptedException {

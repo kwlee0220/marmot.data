@@ -61,8 +61,9 @@ public class RecordListDataSource {
 		}
 
 		@Override
-		public void write(RecordStream stream) {
+		public long write(RecordStream stream) {
 			m_records = stream.toList();
+			return m_records.size();
 		}
 	}
 }

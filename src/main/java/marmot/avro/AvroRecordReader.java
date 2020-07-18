@@ -26,6 +26,12 @@ public abstract class AvroRecordReader implements RecordReader {
 	@Nullable private Schema m_avroSchema;
 	
 	protected abstract DataFileReader<GenericRecord> getFileReader() throws IOException;
+	
+	protected AvroRecordReader() { }
+	protected AvroRecordReader(RecordSchema schema, Schema avroSchema) {
+		m_schema = schema;
+		m_avroSchema = avroSchema;
+	}
 
 	@Override
 	public RecordSchema getRecordSchema() {
@@ -65,24 +71,20 @@ public abstract class AvroRecordReader implements RecordReader {
 				m_schema = AvroUtils.toRecordSchema(m_avroSchema);
 			}
 			
-			return new StreamImpl(reader, m_schema);
+			return new StreamImpl(reader);
 		}
 		catch ( IOException e ) {
 			throw new DataSetException("fails to open SerializableDataSet: cause=" + e);
 		}
 	}
-
-	private static class StreamImpl extends AbstractRecordStream {
+	
+	class StreamImpl extends AbstractRecordStream {
 		private final DataFileReader<GenericRecord> m_fileReader;
-		private final RecordSchema m_schema;
-		private final Schema m_avroSchema;
 		private final AvroRecord m_record;
 		
-		private StreamImpl(DataFileReader<GenericRecord> fileReader, RecordSchema schema) {
+		StreamImpl(DataFileReader<GenericRecord> fileReader) {
 			m_fileReader = fileReader;
-			m_schema = schema;
-			m_avroSchema = fileReader.getSchema();
-			m_record = new AvroRecord(m_schema, m_avroSchema);
+			m_record = new AvroRecord(m_schema, fileReader.getSchema());
 		}
 
 		@Override
@@ -108,6 +110,9 @@ public abstract class AvroRecordReader implements RecordReader {
 			}
 			
 			try {
+				// 새로운 레코드를 읽을 것이기 때문에, 기존 캐쉬에 있는 값을 모두 제거한다.
+				m_record.clearCache();
+				
 				m_fileReader.next(m_record.getGenericRecord());
 				return m_record;
 			}

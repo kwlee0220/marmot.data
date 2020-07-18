@@ -34,15 +34,15 @@ public class AvroSerializer implements RecordWriter {
 	}
 
 	@Override
-	public void write(RecordStream stream) {
+	public long write(RecordStream stream) {
 		Utilities.checkNotNullArgument(stream, "Input RecordStream");
 		
 		GenericDatumWriter<GenericRecord> m_writer = new GenericDatumWriter<>(m_avroSchema);
 		try {
 			Encoder encoder = EncoderFactory.get().binaryEncoder(m_os, null);
 			
-			Record record;
-			while ( (record = stream.next()) != null ) {
+			long count = 0;
+			for ( Record record = stream.next(); record != null; record = stream.next() ) {
 				if ( record instanceof AvroRecord ) {
 					GenericRecord grec = ((AvroRecord)record).getGenericRecord();
 					m_writer.write(grec, encoder);
@@ -51,8 +51,11 @@ public class AvroSerializer implements RecordWriter {
 					GenericRecord grec = AvroUtils.toGenericRecord(record, m_avroSchema);
 					m_writer.write(grec, encoder);
 				}
+				++count;
 			}
 			encoder.flush();
+			
+			return count;
 		}
 		catch ( IOException e ) {
 			throw new RecordStreamException("" + e);

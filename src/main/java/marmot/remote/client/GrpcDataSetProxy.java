@@ -7,31 +7,22 @@ import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
 import marmot.avro.AvroDeserializer;
-import marmot.dataset.DataSet;
+import marmot.dataset.AbstractDataSet;
 import marmot.dataset.DataSetInfo;
 
 /**
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class GrpcDataSetProxy implements DataSet {
-	private final GrpcDataSetServerProxy m_service;
-	private DataSetInfo m_info;
-	
+public class GrpcDataSetProxy extends AbstractDataSet<GrpcDataSetServerProxy> {
 	GrpcDataSetProxy(GrpcDataSetServerProxy service, DataSetInfo info) {
-		m_service = service;
-		m_info = info;
-	}
-
-	@Override
-	public DataSetInfo getDataSetInfo() {
-		return m_info;
+		super(service, info);
 	}
 
 	@Override
 	public RecordStream read() {
 		RecordSchema schema = m_info.getRecordSchema();
-		InputStream is = m_service.readDataSet(m_info.getId());
+		InputStream is = m_server.readDataSet(m_info.getId());
 		
 		try {
 			return AvroDeserializer.deserialize(schema, is);
@@ -42,8 +33,9 @@ public class GrpcDataSetProxy implements DataSet {
 	}
 
 	@Override
-	public void write(RecordStream stream) {
-		m_info = m_service.writeDataSet2(m_info.getId(), stream);
+	public long write(RecordStream stream) {
+		m_info = m_server.writeDataSet2(m_info.getId(), stream);
+		return m_info.getRecordCount();
 	}
 
 	@Override
@@ -54,5 +46,10 @@ public class GrpcDataSetProxy implements DataSet {
 	@Override
 	public String toString() {
 		return String.format("%s[%s]", getClass().getSimpleName(), m_info.getId());
+	}
+
+	@Override
+	public long getLength() {
+		return 0;
 	}
 }

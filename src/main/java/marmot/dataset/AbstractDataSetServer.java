@@ -2,8 +2,6 @@ package marmot.dataset;
 
 import java.util.List;
 
-import marmot.RecordReader;
-import marmot.RecordWriter;
 import utils.Utilities;
 import utils.stream.FStream;
 
@@ -14,11 +12,15 @@ import utils.stream.FStream;
 public abstract class AbstractDataSetServer implements DataSetServer {
 	private final Catalog m_catalog;
 	
-	abstract protected RecordReader getRecordReader(String filePath);
-	abstract protected RecordWriter getRecordWriter(String filePath);
+	abstract protected DataSet toDataSet(DataSetInfo info);
+	abstract public String getDataSetUri(String dsId);
 	
 	protected AbstractDataSetServer(Catalog catalog) {
 		m_catalog = catalog;
+	}
+	
+	public Catalog getCatalog() {
+		return m_catalog;
 	}
 	
 	@Override
@@ -132,9 +134,5 @@ public abstract class AbstractDataSetServer implements DataSetServer {
 	@Override
 	public void deleteDir(String folder) {
 		m_catalog.deleteDir(folder);
-	}
-	
-	private DataSet toDataSet(DataSetInfo info) {
-		return new DataSetImpl(this, info, getRecordReader(info.getFilePath()), getRecordWriter(info.getFilePath()));
 	}
 }

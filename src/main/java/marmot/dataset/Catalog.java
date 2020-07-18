@@ -29,7 +29,13 @@ public class Catalog {
 	private final JdbcProcessor m_jdbc;
 	
 	public Catalog(JdbcProcessor jdbc) {
+		Utilities.checkNotNullArgument(jdbc);
+		
 		m_jdbc = jdbc;
+	}
+	
+	public JdbcProcessor getJdbcProcessor() {
+		return m_jdbc;
 	}
 	
 	public String toFilePath(String id) {
@@ -323,8 +329,7 @@ public class Catalog {
 			pstmt.setString(3, info.getRecordSchema().toTypeId());
 			pstmt.setLong(4, info.getRecordCount());
 			pstmt.setString(5, fromEnvelope(info.getBounds()));
-			pstmt.setString(6, generateFilePath(id));
-			pstmt.setLong(7, System.currentTimeMillis());
+			pstmt.setLong(6, System.currentTimeMillis());
 			
 			if ( pstmt.executeUpdate() <= 0 ) {
 				throw new CatalogException("fails to insert a DataSet");
@@ -358,16 +363,11 @@ public class Catalog {
 		insertDataSetInfoInGuard(conn, newInfo);
 	}
 	
-	private String generateFilePath(String dsId) {
-		dsId = Catalogs.normalize(dsId).substring(1);
-		return toFilePath(dsId);
-	}
-	
 	private static final String SQL_EXISTS_DATASET
 		= "select id from datasets where id = ? or id like ?";
 	
 	private static final String DATASET_COLUMNS
-		= "id, folder, schema, count, bounds, file_path, updated_millis ";
+		= "id, folder, schema, count, bounds, updated_millis ";
 	private static final String SQL_GET_DATASET_ALL
 		= "select " + DATASET_COLUMNS + "from datasets";
 
@@ -384,7 +384,7 @@ public class Catalog {
 		= "select " + DATASET_COLUMNS + "from datasets where folder = ? or folder LIKE ?";
 	
 	private static final String SQL_INSERT_DATASET
-		= "insert into datasets (" + DATASET_COLUMNS + ") values (?,?,?,?,?,?,?)";
+		= "insert into datasets (" + DATASET_COLUMNS + ") values (?,?,?,?,?,?)";
 	
 	private static final String SQL_UPDATE_DATASET
 		= "update datasets set count = ?, bounds = ?, updated_millis = ? where id=?";
@@ -407,7 +407,6 @@ public class Catalog {
 		+ 	"schema varchar not null,"
 		+ 	"count bigint not null,"
 		+ 	"bounds varchar,"
-		+ 	"file_path varchar not null,"
 		+ 	"updated_millis bigint not null,"
 		+ 	"primary key (id)"
 		+ ")";
@@ -437,9 +436,8 @@ public class Catalog {
 		try {
 			String id = rs.getString(1);
 			RecordSchema schema = RecordSchema.fromTypeId(rs.getString(3));
-			String filePath = rs.getString(6);
 			
-			DataSetInfo dsInfo = new DataSetInfo(id, schema, filePath);
+			DataSetInfo dsInfo = new DataSetInfo(id, schema);
 			dsInfo.setRecordCount(rs.getLong(4));
 			dsInfo.setBounds(toEnvelope(rs.getString(5)));
 			

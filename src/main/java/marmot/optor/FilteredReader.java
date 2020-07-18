@@ -12,11 +12,11 @@ import marmot.stream.AbstractRecordStream;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class FilteredDataSet implements RecordReader {
+public class FilteredReader implements RecordReader {
 	private final RecordReader m_input;
 	private final Predicate<? super Record> m_pred;
 	
-	public FilteredDataSet(RecordReader input, Predicate<? super Record> pred) {
+	public FilteredReader(RecordReader input, Predicate<? super Record> pred) {
 		m_input = input;
 		m_pred = pred;
 	}

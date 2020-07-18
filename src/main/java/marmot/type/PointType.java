@@ -39,4 +39,8 @@ public class PointType extends GeometryDataType {
 	public static Point toPoint(Coordinate coord) {
 		return GEOM_FACT.createPoint(coord);
 	}
+	
+	public static Point toPoint(double x, double y) {
+		return toPoint(new Coordinate(x, y));
+	}
 }

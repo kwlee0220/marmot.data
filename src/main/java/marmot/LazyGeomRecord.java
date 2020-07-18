@@ -9,12 +9,16 @@ import marmot.type.GeometryDataType;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-class LazyGeomRecord implements Record {
+public class LazyGeomRecord implements Record {
 	private final RecordSchema m_schema;
 	private final Object[] m_values;
 	private final Object[] m_cache;
 	
-	LazyGeomRecord(RecordSchema schema) {
+	public static LazyGeomRecord of(RecordSchema schema) {
+		return new LazyGeomRecord(schema);
+	}
+	
+	private LazyGeomRecord(RecordSchema schema) {
 		m_schema = schema;
 		m_values = new Object[m_schema.getColumnCount()];
 		m_cache = new Object[m_schema.getColumnCount()];
