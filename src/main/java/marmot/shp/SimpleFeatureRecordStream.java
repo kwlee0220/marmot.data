@@ -11,6 +11,7 @@ import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStreamException;
 import marmot.stream.AbstractRecordStream;
+import marmot.type.GeometryDataType;
 import utils.Utilities;
 import utils.func.Try;
 
@@ -18,9 +19,9 @@ import utils.func.Try;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-class SimpleFeatureRecordStream extends AbstractRecordStream {
+public class SimpleFeatureRecordStream extends AbstractRecordStream {
 	private final FeatureIterator<SimpleFeature> m_reader;
-	private final RecordSchema m_schema;
+	private RecordSchema m_schema;
 	
 	private SimpleFeature m_first = null;
 	
@@ -48,7 +49,6 @@ class SimpleFeatureRecordStream extends AbstractRecordStream {
 		Utilities.checkNotNullArgument(iter);
 		
 		try {
-			
 			m_schema = ShapefileDataSets.toRecordSchema(sfType);
 		}
 		catch ( Throwable e ) {

@@ -1,5 +1,17 @@
 package marmot.command;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Properties;
+
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.log4j.PropertyConfigurator;
+
+import com.google.common.collect.Maps;
+
 import marmot.MarmotLfsServer;
 import marmot.command.LfsDataSetMain.Format;
 import marmot.dataset.LfsAvroDataSetServer;
@@ -20,7 +32,7 @@ import utils.PicocliSubCommand;
 			DatasetCommands.ListDataSet.class,
 			DatasetCommands.Show.class,
 			DatasetCommands.Schema.class,
-//			DatasetCommands.Move.class,
+			DatasetCommands.Move.class,
 //			DatasetCommands.SetGcInfo.class,
 //			DatasetCommands.AttachGeometry.class,
 //			DatasetCommands.Count.class,

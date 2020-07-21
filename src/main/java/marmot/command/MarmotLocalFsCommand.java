@@ -51,8 +51,6 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	protected abstract void run(MarmotLfsServer marmot) throws Exception;
 
 	public static final void run(MarmotLocalFsCommand cmd, String... args) throws Exception {
-		File propsFile = configureLog4j();
-
 		new CommandLine(cmd).parseWithHandler(new RunLast(), System.err, args);
 	}
 	
@@ -84,15 +82,13 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 		
 		return m_marmot;
 	}
-	
-	public static File getLog4jPropertiesFile() {
+
+	@Override
+	public void configureLog4j() throws IOException {
 		String homeDir = FOption.ofNullable(System.getenv(ENVVAR_HOME))
 								.getOrElse(() -> System.getProperty("user.dir"));
-		return new File(homeDir, "log4j.properties");
-	}
-	
-	public static File configureLog4j() throws IOException {
-		File propsFile = getLog4jPropertiesFile();
+		File propsFile = new File(homeDir, "log4j.properties");
+		System.out.printf("use log4j.properties: file=%s%n", propsFile);
 		
 		Properties props = new Properties();
 		try ( InputStream is = new FileInputStream(propsFile) ) {
@@ -106,11 +102,8 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 		rfFile = StringSubstitutor.replace(rfFile, bindings);
 		props.setProperty("log4j.appender.rfout.File", rfFile);
 		PropertyConfigurator.configure(props);
-		
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("use log4j.properties from {}", propsFile);
 		}
-		
-		return propsFile;
 	}
 }

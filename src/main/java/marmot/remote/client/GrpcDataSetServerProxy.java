@@ -115,12 +115,12 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 	}
 	
 	@Override
-	public void moveDataSet(String id, String newId) {
-		VoidResponse resp = m_blockStub.moveDataSet(MoveDataSetRequest.newBuilder()
-																	.setSrcId(id)
-																	.setDestId(newId)
-																	.build());
-		PBUtils.handle(resp);
+	public DataSet moveDataSet(String id, String newId) {
+		DataSetInfoResponse resp = m_blockStub.moveDataSet(MoveDataSetRequest.newBuilder()
+																			.setSrcId(id)
+																			.setDestId(newId)
+																			.build());
+		return toDataSet(resp);
 	}
 	
 	@Override

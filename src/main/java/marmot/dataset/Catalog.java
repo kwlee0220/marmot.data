@@ -153,9 +153,9 @@ public class Catalog {
 		}
 	}
 
-	public void moveDataSetInfo(String id, String newId) {
+	public DataSetInfo moveDataSetInfo(String id, String newId) {
 		try ( Connection conn = m_jdbc.connect(); ) {
-			moveDataSetInGuard(conn, id, newId);
+			return moveDataSetInGuard(conn, id, newId);
 		}
 		catch ( SQLException e ) {
 			throw new CatalogException(e);
@@ -344,7 +344,7 @@ public class Catalog {
 		}
 	}
 
-	private void moveDataSetInGuard(Connection conn, String id, String newId) throws SQLException {
+	private DataSetInfo moveDataSetInGuard(Connection conn, String id, String newId) throws SQLException {
 		DataSetInfo info = getDataSetInfoInGuard(conn, id)
 								.getOrThrow(()->new DataSetNotFoundException(id));
 		
@@ -361,6 +361,8 @@ public class Catalog {
 		newInfo.setBounds(info.getBounds());
 		newInfo.setRecordCount(info.getRecordCount());
 		insertDataSetInfoInGuard(conn, newInfo);
+		
+		return newInfo;
 	}
 	
 	private static final String SQL_EXISTS_DATASET

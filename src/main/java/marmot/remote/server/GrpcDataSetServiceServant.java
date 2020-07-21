@@ -159,14 +159,14 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 	}
 
 	@Override
-    public void moveDataSet(MoveDataSetRequest req, StreamObserver<VoidResponse> out) {
+    public void moveDataSet(MoveDataSetRequest req, StreamObserver<DataSetInfoResponse> out) {
 		try {
 			s_logger.debug("moveDataSet: from={}, to={}", req.getSrcId(), req.getDestId());
-			m_server.moveDataSet(req.getSrcId(), req.getDestId());
-			out.onNext(VOID_RESPONSE());
+			DataSet renamed = m_server.moveDataSet(req.getSrcId(), req.getDestId());
+			out.onNext(toDataSetInfoResponse(renamed.getDataSetInfo()));
 		}
 		catch ( Exception e ) {
-			out.onNext(VOID_RESPONSE(e));
+			out.onNext(toDataSetInfoResponse(e));
 		}
 		finally {
 			out.onCompleted();

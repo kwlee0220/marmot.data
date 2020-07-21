@@ -14,6 +14,8 @@ service FileService {
 	rpc readHdfsFile(stream proto.stream.UpMessage) returns (stream proto.stream.DownMessage);
 	rpc writeHdfsFile(stream proto.stream.UpMessage) returns (stream proto.stream.DownMessage);
 	rpc deleteHdfsFile(StringProto) returns (BoolResponse);
+	
+	rpc walkRegularFileTree(StringProto) returns (stream StringProto);
 }
 
 message WriteHdfsFileRequest {

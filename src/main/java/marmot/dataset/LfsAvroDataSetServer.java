@@ -88,6 +88,31 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 	}
 
 	@Override
+	public DataSet moveDataSet(String id, String newId) {
+		Catalog catalog = getCatalog();
+		
+		DataSetInfo oldInfo = catalog.getDataSetInfo(id).getOrThrow(() -> new DataSetNotFoundException(id));
+		DataSetInfo newInfo = catalog.moveDataSetInfo(id, newId);
+		
+		try {
+			File srcDir = getFile(oldInfo);
+			File destDir = getFile(newInfo);
+			FileUtils.moveDirectory(srcDir, destDir);
+			
+			return toDataSet(newInfo);
+		}
+		catch ( IOException e ) {
+			catalog.moveDataSetInfo(newId, id);
+			
+			throw new DataSetException(String.format("fails to move dataset: %s -> %s", id, newId), e);
+		}
+	}
+	
+	private File getFile(DataSetInfo info) {
+		return new File(m_root, info.getId().substring(1));
+	}
+
+	@Override
 	protected DataSet toDataSet(DataSetInfo info) {
 		return new LfsDataSet(this, info);
 	}

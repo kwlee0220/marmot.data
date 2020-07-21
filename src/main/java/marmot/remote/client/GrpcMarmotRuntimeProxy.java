@@ -15,7 +15,7 @@ public class GrpcMarmotRuntimeProxy implements MarmotRuntime {
 	private GrpcFileServerProxy m_fileServer;
 	
 	public static GrpcMarmotRuntimeProxy connect(String host, int port) {
-		ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 15685)
+		ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port)
 														.usePlaintext()
 														.build();
 		return new GrpcMarmotRuntimeProxy(channel);

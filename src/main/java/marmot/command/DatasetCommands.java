@@ -18,6 +18,8 @@ import marmot.csv.CsvRecordReader;
 import marmot.dataset.DataSet;
 import marmot.dataset.DataSetInfo;
 import marmot.dataset.DataSetServer;
+import marmot.geojson.GeoJsonParameters;
+import marmot.geojson.GeoJsonRecordReader;
 import marmot.shp.ExportShapefileParameters;
 import marmot.shp.ShapefileParameters;
 import marmot.shp.ShapefileReader;
@@ -181,21 +183,23 @@ public class DatasetCommands {
 		}
 	}
 
-//	@Command(name="move", description="move a dataset to another directory")
-//	public static class Move extends PicocliSubCommand<MarmotRuntime> {
-//		@Parameters(paramLabel="id", index="0", arity="1..1", description={"id for the source dataset"})
-//		private String m_src;
-//		
-//		@Parameters(paramLabel="path", description={"path to the destination path"})
-//		private String m_dest;
-//
-//		@Override
-//		public void run(MarmotRuntime initialContext) throws Exception {
-//			DataSet srcDs = initialContext.getDataSet(m_src);
-//			initialContext.moveDataSet(srcDs.getId(), m_dest);
-//		}
-//	}
-//
+	@Command(name="move", description="move a dataset to another directory")
+	public static class Move extends PicocliSubCommand<MarmotRuntime> {
+		@Parameters(paramLabel="id", index="0", arity="1..1", description={"id for the source dataset"})
+		private String m_src;
+		
+		@Parameters(paramLabel="new_id", index="1", arity="1..1", description={"new id"})
+		private String m_dest;
+
+		@Override
+		public void run(MarmotRuntime marmot) throws Exception {
+			DataSetServer server = marmot.getDataSetServer();
+			
+			DataSet srcDs = server.getDataSet(m_src);
+			server.moveDataSet(srcDs.getId(), m_dest);
+		}
+	}
+
 //	@Command(name="set_geometry", description="set Geometry column info for a dataset")
 //	public static class SetGcInfo extends PicocliSubCommand<MarmotRuntime> {
 //		@Parameters(paramLabel="id", index="0", arity="1..1", description={"dataset id"})
@@ -391,7 +395,7 @@ public class DatasetCommands {
 			subcommands= {
 				ImportCsvCmd.class,
 				ImportShapefileCmd.class,
-//				ImportGeoJsonCmd.class,
+				ImportGeoJsonCmd.class,
 //				ImportJdbcCmd.class
 			},
 			description="import into the dataset")
@@ -465,47 +469,37 @@ public class DatasetCommands {
 		}
 	}
 
-//	@Command(name="geojson", description="import geojson file into the dataset")
-//	public static class ImportGeoJsonCmd extends PicocliSubCommand<MarmotRuntime> {
-//		@Mixin private GeoJsonParameters m_gjsonParams;
-//		@Mixin private ImportParameters m_importParams;
-//		
-//		@Parameters(paramLabel="path", index="0", arity="1..1",
-//					description={"path to the target geojson files (or directories)"})
-//		private String m_path;
-//
-//		@Parameters(paramLabel="dataset_id", index="1", arity="1..1",
-//				description={"dataset id to import onto"})
-//		public void setDataSetId(String id) {
-//			Utilities.checkNotNullArgument(id, "dataset id is null");
-//			
-//			m_importParams.setDataSetId(id);
-//		}
-//
-//		@Override
-//		public void run(MarmotRuntime initialContext) throws Exception {
-//			StopWatch watch = StopWatch.start();
-//			
-//			if ( m_importParams.getGeometryColumnInfo().isAbsent() ) {
-//				throw new IllegalArgumentException("Option '-geom_col' is missing");
-//			}
-//			
-//			File gjsonFile = new File(m_path);
-//			ImportGeoJson importFile = ImportGeoJson.from(gjsonFile, m_gjsonParams, m_importParams);
-//			importFile.getProgressObservable()
-//						.subscribe(report -> {
-//							double velo = report / watch.getElapsedInFloatingSeconds();
-//							System.out.printf("imported: count=%d, elapsed=%s, velo=%.1f/s%n",
-//											report, watch.getElapsedMillisString(), velo);
-//						});
-//			long count = importFile.run(initialContext);
-//			
-//			double velo = count / watch.getElapsedInFloatingSeconds();
-//			System.out.printf("imported: dataset=%s count=%d elapsed=%s, velo=%.1f/s%n",
-//								m_importParams.getDataSetId(), count, watch.getElapsedMillisString(), velo);
-//		}
-//	}
-//
+	@Command(name="geojson", description="import geojson file into the dataset")
+	public static class ImportGeoJsonCmd extends PicocliSubCommand<MarmotRuntime> {
+		@Mixin private GeoJsonParameters m_gjsonParams;
+		
+		@Parameters(paramLabel="path", index="0", arity="1..1",
+					description={"path to the target geojson files (or directories)"})
+		private File m_start;
+		
+		@Parameters(paramLabel="dataset_id", index="1", arity="1..1",
+					description={"dataset id to import onto"})
+		private String m_dsId;
+
+		@Option(names={"-f"}, description="force to create a dataset")
+		private boolean m_force = false;
+
+		@Override
+		public void run(MarmotRuntime marmot) throws Exception {
+			StopWatch watch = StopWatch.start();
+			
+			RecordReader reader = GeoJsonRecordReader.from(m_start, m_gjsonParams.charset());
+			
+			DataSetInfo info = new DataSetInfo(m_dsId, reader.getRecordSchema());
+			DataSet ds = marmot.getDataSetServer().createDataSet(info, m_force);
+			long count = ds.write(reader.read());
+			
+			double velo = count / watch.getElapsedInFloatingSeconds();
+			System.out.printf("imported: dataset=%s count=%d elapsed=%s, velo=%.1f/s%n",
+								m_dsId, count, watch.getElapsedMillisString(), velo);
+		}
+	}
+
 //	@Command(name="jdbc", description="import a JDBC-connected table into a dataset")
 //	public static class ImportJdbcCmd extends PicocliSubCommand<MarmotRuntime> {
 //		@Mixin private LoadJdbcParameters m_jdbcParams;

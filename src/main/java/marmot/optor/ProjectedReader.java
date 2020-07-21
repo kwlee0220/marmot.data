@@ -60,6 +60,11 @@ public class ProjectedReader implements RecordReader {
 	public String toString() {
 		return String.format("project: '%s'", getClass().getSimpleName(), m_columnSelection);
 	}
+	
+	public static RecordStream project(RecordStream strm, String columnSelection) {
+		ColumnSelector selector = ColumnSelectorFactory.create(strm.getRecordSchema(), columnSelection);
+		return new StreamImpl(strm, selector);
+	}
 
 	static class StreamImpl extends AbstractRecordStream {
 		private final RecordStream m_input;

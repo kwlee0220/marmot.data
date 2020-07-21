@@ -2,6 +2,7 @@ package marmot.file;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,8 @@ import java.io.InputStream;
 import org.apache.commons.io.FileUtils;
 
 import com.google.common.io.ByteStreams;
+
+import utils.stream.FStream;
 
 /**
  * 
@@ -22,9 +25,14 @@ public class LfsFileServer implements FileServer {
 	}
 
 	@Override
-	public InputStream readFile(String path) throws IOException {
-		File fullPath = new File(m_root, path);
-		return new FileInputStream(fullPath);
+	public InputStream readFile(String path) throws MarmotFileNotFoundException {
+		try {
+			File fullPath = new File(m_root, path);
+			return new FileInputStream(fullPath);
+		}
+		catch ( FileNotFoundException e ) {
+			throw new MarmotFileNotFoundException(path);
+		}
 	}
 
 	@Override
@@ -39,5 +47,18 @@ public class LfsFileServer implements FileServer {
 	public boolean deleteFile(String path) {
 		File fullPath = new File(m_root, path);
 		return FileUtils.deleteQuietly(fullPath);
+	}
+
+	@Override
+	public FStream<String> walkRegularFileTree(String start) {
+		try {
+			File fullPath = new File(m_root, start);
+			return utils.io.FileUtils.walk(fullPath)
+						.filter(file -> file.isFile() && file.getName().startsWith("_"))
+						.map(File::toString);
+		}
+		catch ( IOException e ) {
+			throw new MarmotFileException("fails to traverse: start=" + start, e);
+		}
 	}
 }

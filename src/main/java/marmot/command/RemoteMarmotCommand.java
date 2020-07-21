@@ -49,8 +49,6 @@ public abstract class RemoteMarmotCommand implements PicocliCommand<GrpcMarmotRu
 	protected abstract void run(GrpcMarmotRuntimeProxy marmot) throws Exception;
 
 	public static final void run(RemoteMarmotCommand cmd, String... args) throws Exception {
-		File propsFile = configureLog4j();
-
 		new CommandLine(cmd).parseWithHandler(new RunLast(), System.err, args);
 	}
 	
@@ -86,10 +84,12 @@ public abstract class RemoteMarmotCommand implements PicocliCommand<GrpcMarmotRu
 	}
 
 	private static final String ENVVAR_HOME = "MARMOT_HOME";
-	public static File configureLog4j() throws IOException {
+	@Override
+	public void configureLog4j() throws IOException {
 		String homeDir = FOption.ofNullable(System.getenv(ENVVAR_HOME))
 								.getOrElse(() -> System.getProperty("user.dir"));
 		File propsFile = new File(homeDir, "log4j.properties");
+		System.out.printf("use log4j.properties: file=%s%n", propsFile);
 		
 		Properties props = new Properties();
 		try ( InputStream is = new FileInputStream(propsFile) ) {
@@ -103,11 +103,8 @@ public abstract class RemoteMarmotCommand implements PicocliCommand<GrpcMarmotRu
 		rfFile = StringSubstitutor.replace(rfFile, bindings);
 		props.setProperty("log4j.appender.rfout.File", rfFile);
 		PropertyConfigurator.configure(props);
-		
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("use log4j.properties from {}", propsFile);
 		}
-		
-		return propsFile;
 	}
 }

@@ -6,6 +6,7 @@ import static utils.grpc.PBUtils.STRING;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 
 import com.google.common.io.ByteStreams;
 import com.google.protobuf.ByteString;
@@ -14,6 +15,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import marmot.file.FileServer;
 import proto.Int64Response;
+import proto.StringProto;
 import proto.file.FileServiceGrpc;
 import proto.file.FileServiceGrpc.FileServiceBlockingStub;
 import proto.file.FileServiceGrpc.FileServiceStub;
@@ -22,6 +24,7 @@ import utils.Throwables;
 import utils.grpc.PBUtils;
 import utils.grpc.stream.client.StreamDownloadReceiver;
 import utils.grpc.stream.client.StreamUploadOutputStream;
+import utils.stream.FStream;
 
 /**
  * 
@@ -69,5 +72,11 @@ public class GrpcFileServerProxy implements FileServer {
 	@Override
 	public boolean deleteFile(String path) {
 		return PBUtils.handle(m_blockStub.deleteHdfsFile(STRING(path)));
+	}
+
+	@Override
+	public FStream<String> walkRegularFileTree(String start) {
+		Iterator<StringProto> iter = m_blockStub.walkRegularFileTree(STRING(start));
+		return FStream.from(iter).map(StringProto::getValue);
 	}
 }

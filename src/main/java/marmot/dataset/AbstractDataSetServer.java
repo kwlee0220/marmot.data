@@ -79,25 +79,25 @@ public abstract class AbstractDataSetServer implements DataSetServer {
 									.toList();
 	}
 
-	@Override
-	public void moveDataSet(String id, String newId) {
-		DataSetInfo info = m_catalog.getDataSetInfo(id)
-									.getOrThrow(()->new DataSetNotFoundException(id));
-		
-		if ( m_catalog.getDataSetInfo(newId).isPresent() ) {
-			throw new DataSetExistsException("target dataset exists: id=" + newId);
-		}
-		if ( m_catalog.isDirectory(newId) ) {
-			String name = Catalogs.getName(id);
-			newId = Catalogs.toDataSetId(newId, name);
-		}
-		m_catalog.deleteDataSetInfo(info.getId());
-		
-		DataSetInfo newInfo = new DataSetInfo(newId, info.getRecordSchema());
-		newInfo.setBounds(info.getBounds());
-		newInfo.setRecordCount(info.getRecordCount());
-		m_catalog.insertDataSetInfo(newInfo);
-	}
+//	@Override
+//	public void moveDataSet(String id, String newId) {
+//		DataSetInfo info = m_catalog.getDataSetInfo(id)
+//									.getOrThrow(()->new DataSetNotFoundException(id));
+//		
+//		if ( m_catalog.getDataSetInfo(newId).isPresent() ) {
+//			throw new DataSetExistsException("target dataset exists: id=" + newId);
+//		}
+//		if ( m_catalog.isDirectory(newId) ) {
+//			String name = Catalogs.getName(id);
+//			newId = Catalogs.toDataSetId(newId, name);
+//		}
+//		m_catalog.deleteDataSetInfo(info.getId());
+//		
+//		DataSetInfo newInfo = new DataSetInfo(newId, info.getRecordSchema());
+//		newInfo.setBounds(info.getBounds());
+//		newInfo.setRecordCount(info.getRecordCount());
+//		m_catalog.insertDataSetInfo(newInfo);
+//	}
 
 	@Override
 	public List<String> getDirAll() {

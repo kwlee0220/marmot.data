@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.geotools.data.shapefile.ShapefileDataStore;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,10 @@ import marmot.RecordReader;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
+import marmot.stream.MultiSourcesRecordStream;
 import utils.geo.Shapefile;
+import utils.stream.FStream;
+
 
 /**
  * 
@@ -64,7 +68,7 @@ public class ShapefileReader implements RecordReader {
 
 	@Override
 	public RecordStream read() {
-		return new ShapefileRecordStream(m_schema, Lists.newArrayList(m_shpFiles), m_charset);
+		return new MultiFilesShpRecordStream(m_schema, Lists.newArrayList(m_shpFiles), m_charset);
 	}
 	
 	@Override
@@ -76,5 +80,36 @@ public class ShapefileReader implements RecordReader {
 		s_logger.debug("loading Shapefile: {}", shpFile);
 		SimpleFeatureType sfType = Shapefile.of(shpFile, m_charset).getSimpleFeatureType();
 		return ShapefileDataSets.toRecordSchema(sfType);
+	}
+	
+	static class MultiFilesShpRecordStream extends MultiSourcesRecordStream<File> {
+		private static final Logger s_logger = LoggerFactory.getLogger(MultiFilesShpRecordStream.class);
+
+		private final Charset m_charset;
+		
+		public MultiFilesShpRecordStream(RecordSchema schema, List<File> shpFiles, Charset charset) {
+			super(FStream.from(shpFiles), schema);
+			
+			m_charset = charset;
+			setLogger(s_logger);
+		}
+		
+		public Charset getCharset() {
+			return m_charset;
+		}
+
+		@Override
+		protected RecordStream read(File shpFile) throws RecordStreamException {
+			getLogger().debug("loading shapefile: " + shpFile);
+			
+			try {
+				ShapefileDataStore shpStore = Shapefile.of(shpFile, m_charset).getDataStore();
+				return ShapefileDataSets.toRecordStream(shpStore.getFeatureSource())
+										.onClose(shpStore::dispose);
+			}
+			catch ( IOException e ) {
+				throw new RecordStreamException("fails to read a shapefile: file=" + shpFile, e);
+			}
+		}
 	}
 }

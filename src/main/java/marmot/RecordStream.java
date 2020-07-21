@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import com.google.common.collect.Lists;
 
 import io.reactivex.Observable;
+import marmot.optor.ProjectedReader;
 import marmot.optor.TakenReader;
 import marmot.stream.AutoClosingRecordStream;
 import marmot.stream.CloserAttachedRecordStream;
@@ -81,6 +82,10 @@ public interface RecordStream extends AutoCloseable {
 	
 	public default RecordStream take(long count) {
 		return new TakenReader.ResultStream(this, count);
+	}
+	
+	public default RecordStream project(String columnSelection) {
+		return ProjectedReader.project(this, columnSelection);
 	}
 	
 	public default StatsCollectingRecordStream collectStats() {

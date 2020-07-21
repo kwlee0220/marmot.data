@@ -16,7 +16,7 @@ service DataSetService {
 
 	rpc readDataSet(stream proto.stream.UpMessage) returns (stream proto.stream.DownMessage);
 	rpc writeDataSet(stream proto.stream.UpMessage) returns (stream proto.stream.DownMessage);
-	rpc moveDataSet(MoveDataSetRequest) returns (VoidResponse);
+	rpc moveDataSet(MoveDataSetRequest) returns (DataSetInfoResponse);
 	
 	rpc getDataSetInfo(StringProto) returns (DataSetInfoResponse);
 	rpc getDataSetInfoAll(VoidProto) returns (stream DataSetInfoResponse);

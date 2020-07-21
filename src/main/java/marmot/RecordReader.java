@@ -2,8 +2,11 @@ package marmot;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import com.google.common.collect.Maps;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -13,6 +16,7 @@ import marmot.optor.FilteredReader;
 import marmot.optor.MultiColumnKey;
 import marmot.optor.PeekingDataSet;
 import marmot.optor.ProjectedReader;
+import marmot.optor.RenameRecordReader;
 import marmot.optor.ScriptFilteredReader;
 import marmot.optor.TakenReader;
 import marmot.optor.geo.TransformSridReader;
@@ -65,6 +69,13 @@ public interface RecordReader {
 	
 	public default RecordReader transformSrid(String tarSrid) {
 		return new TransformSridReader(this, "the_geom", tarSrid);
+	}
+	
+	public default RecordReader renameColumn(String srcColName, String tarColName) {
+		Map<String,String> mappings = Maps.newHashMap();
+		mappings.put(srcColName, tarColName);
+		
+		return new RenameRecordReader(this, mappings);
 	}
 	
 	public static RecordReader concat(RecordSchema schema, FStream<? extends RecordReader> datasets) {

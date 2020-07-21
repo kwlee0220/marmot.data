@@ -85,6 +85,7 @@ dependencies {
 	// GeoTools & JTS
 	implementation	"org.geotools:gt-epsg-hsql:${geotools_version}"
 	implementation "org.geotools:gt-shapefile:${geotools_version}"
+	api "org.geotools:gt-geojson:${geotools_version}"
 	api "com.vividsolutions:jts-core:${jts_version}"
 	
 	// Avro
