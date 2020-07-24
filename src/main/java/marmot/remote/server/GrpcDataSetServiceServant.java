@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
+import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.avro.AvroDeserializer;
@@ -25,9 +26,12 @@ import marmot.dataset.DataSetExistsException;
 import marmot.dataset.DataSetInfo;
 import marmot.dataset.DataSetNotFoundException;
 import marmot.dataset.DataSetServer;
+import marmot.pb.PBValueProtos;
 import proto.BoolResponse;
 import proto.ErrorProto;
 import proto.ErrorProto.Code;
+import proto.RecordProto;
+import proto.RecordResponse;
 import proto.StringProto;
 import proto.StringResponse;
 import proto.VoidProto;
@@ -267,6 +271,27 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 		
 		return sender;
     }
+
+	@Override
+    public void readDataSet2(StringProto req, StreamObserver<RecordResponse> out) {
+		try {
+			String dsId = req.getValue();
+			DataSet ds = m_server.getDataSet(dsId);
+			try ( RecordStream strm = ds.read() ) {
+				for ( Record rec = strm.next(); rec != null; rec = strm.next() ) {
+					RecordProto recProto = PBValueProtos.toRecordProto(rec);
+					RecordResponse resp = RecordResponse.newBuilder().setRecord(recProto).build();
+					out.onNext(resp);
+				}
+			}
+		}
+		catch ( Exception e ) {
+			out.onNext(toRecordResponse(e));
+		}
+		finally {
+			out.onCompleted();
+		}
+    }
 	
 	@Override
     public StreamObserver<UpMessage> writeDataSet(StreamObserver<DownMessage> out) {
@@ -305,5 +330,20 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 		}
 		
 		return DataSetInfoResponse.newBuilder().setError(proto).build();
+	}
+	
+	private RecordResponse toRecordResponse(Exception error) {
+		ErrorProto proto;
+		if ( error instanceof DataSetNotFoundException )  {
+			proto = ERROR(Code.NOT_FOUND, error.getMessage());
+		}
+		else if ( error instanceof DataSetExistsException )  {
+			proto = ERROR(Code.ALREADY_EXISTS, error.getMessage());
+		}
+		else {
+			proto = ERROR(error);
+		}
+		
+		return RecordResponse.newBuilder().setError(proto).build();
 	}
 }

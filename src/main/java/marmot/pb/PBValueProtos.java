@@ -9,8 +9,11 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 
+import marmot.Record;
+import marmot.RecordSchema;
 import marmot.type.GeometryDataType;
 import marmot.type.TypeClass;
+import proto.RecordProto;
 import proto.TypeCodeProto;
 import proto.ValueProto;
 import utils.LocalDateTimes;
@@ -28,6 +31,22 @@ public class PBValueProtos {
 	
 	private PBValueProtos() {
 		throw new AssertionError("Should not be called: " + getClass());
+	}
+	
+	public static void fromRecordProto(RecordProto proto, Record output) {
+		RecordSchema schema = output.getRecordSchema();
+		for ( int i =0; i < schema.getColumnCount(); ++i ) {
+			PBValueProtos.fromProto(proto.getColumn(i));
+			output.set(i, PBValueProtos.fromProto(proto.getColumn(i)));
+		}
+	}
+	
+	public static RecordProto toRecordProto(Record record) {
+		return record.getRecordSchema()
+					.streamColumns()
+					.map(col -> toValueProto(col.type().typeClass(), record.get(col.ordinal())))
+					.foldLeft(RecordProto.newBuilder(), (b,v) -> b.addColumn(v))
+					.build();
 	}
 	
 	//
