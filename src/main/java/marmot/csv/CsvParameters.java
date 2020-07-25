@@ -157,7 +157,6 @@ public class CsvParameters {
 				throw new IllegalArgumentException("invalid point column expr='" + pointCols + "'");
 			}
 			
-//			Tuple<String,String> geomCol = parseGeometryColumn(rec.get(0));
 			m_pointCols = Tuple.of("the_geom", rec.get(0), rec.get(1), rec.get(2));
 			m_pointColsExpr = pointCols;
 		}
