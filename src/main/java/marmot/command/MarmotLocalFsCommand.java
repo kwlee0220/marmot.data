@@ -46,10 +46,14 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	@Option(names={"--jdbc"}, paramLabel="<system>:", description={"JDBC connection string"})
 	@Nullable private String m_jdbcStr;
 	
+	@Option(names={"-v"}, description={"verbose"})
+	protected boolean m_verbose = false;
+	
 	@Nullable private MarmotLfsServer m_marmot;
 	
 	protected abstract void run(MarmotLfsServer marmot) throws Exception;
 
+	@SuppressWarnings("deprecation")
 	public static final void run(MarmotLocalFsCommand cmd, String... args) throws Exception {
 		new CommandLine(cmd).parseWithHandler(new RunLast(), System.err, args);
 	}
@@ -57,6 +61,8 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	@Override
 	public void run() {
 		try {
+			configureLog4j();
+			
 			MarmotLfsServer marmot = getInitialContext();
 			run(marmot);
 		}
@@ -88,7 +94,9 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 		String homeDir = FOption.ofNullable(System.getenv(ENVVAR_HOME))
 								.getOrElse(() -> System.getProperty("user.dir"));
 		File propsFile = new File(homeDir, "log4j.properties");
-		System.out.printf("use log4j.properties: file=%s%n", propsFile);
+		if ( m_verbose ) {
+			System.out.printf("use log4j.properties: file=%s%n", propsFile);
+		}
 		
 		Properties props = new Properties();
 		try ( InputStream is = new FileInputStream(propsFile) ) {
