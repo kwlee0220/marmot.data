@@ -19,6 +19,7 @@ import org.apache.avro.Schema.Type;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.util.Utf8;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -220,6 +221,9 @@ public final class AvroUtils {
 	}
 	
 	static Object fromAvroValue(DataType type, Object value) {
+		if ( value == null ) {
+			return null;
+		}
 		if ( type.isGeometryType() ) {
 			ByteBuffer wkb = (ByteBuffer)value;
 			return GeometryDataType.fromWkb(wkb.array());
@@ -228,6 +232,7 @@ public final class AvroUtils {
 		if ( type instanceof PrimitiveDataType ) {
 			switch ( ((PrimitiveDataType)type).typeClass() ) {
 				case STRING:
+					return ((Utf8)value).toString();
 				case INT:
 				case DOUBLE:
 				case FLOAT:
