@@ -54,17 +54,11 @@ class AvroRecord implements Record {
 	@Override
 	public Object get(int index) {
 		Column col = m_schema.getColumnAt(index);
-		if ( col.type().typeClass() == TypeClass.STRING ) {
-			if ( m_cache[index] == null ) {
-				m_cache[index] = m_grecord.get(index).toString();
-			}
-			return m_cache[index];	
-		}
-		else if ( col.type().isGeometryType() ) {
+		if ( col.type().typeClass() == TypeClass.STRING ||  col.type().isGeometryType() ) {
 			if ( m_cache[index] == null ) {
 				m_cache[index] = AvroUtils.fromAvroValue(col.type(), m_grecord.get(index));
 			}
-			return m_cache[index];		
+			return m_cache[index];	
 		}
 		else {
 			return m_grecord.get(index);
