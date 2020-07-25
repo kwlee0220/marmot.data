@@ -142,6 +142,25 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 					m_guard.unlock();
 				}
 			}
+			
+			// wait 이후 상태가 어떻게 되었을지 알 수 없어, 상태를 확인한다.
+			m_guard.lock();
+			try {
+				if ( m_state == State.DOWNLOADING && m_stream != null ) {
+					// 예상된 상태
+				}
+				else if ( m_state == State.FAILED || m_state == State.CANCELLED ) {
+					m_channel.onCompleted();
+					return;
+				}
+				else {
+					throw new AssertionError();
+				}
+			}
+			finally {
+				
+			}
+			
 			m_watch.restart();
 			
 			// chunk를 보내는 과정 중에 자체적으로 또는 상대방쪽에서
