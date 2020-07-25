@@ -14,6 +14,7 @@ import marmot.avro.AvroFileRecordWriter;
 import marmot.avro.AvroUtils;
 import marmot.avro.MultiFileAvroReader;
 import utils.func.Try;
+import utils.io.IOUtils;
 import utils.jdbc.JdbcProcessor;
 
 /**
@@ -77,7 +78,10 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		
 		Schema avroSchema = AvroUtils.toSchema(dsInfo.getRecordSchema());
 		File schemaFile = new File(file, "_schema.avsc");
-		try ( PrintWriter pw = new PrintWriter(new FileWriter(schemaFile)) ) {
+		PrintWriter pw = null;
+		try {
+			FileUtils.forceMkdirParent(schemaFile);
+			pw = new PrintWriter(new FileWriter(schemaFile));
 			pw.println(avroSchema.toString(true));
 			
 			return ds;
@@ -85,6 +89,21 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		catch ( IOException e ) {
 			throw new DataSetException("fails to write avro schema file: " + schemaFile, e);
 		}
+		finally {
+			IOUtils.closeQuietly(pw);
+		}
+	}
+
+	@Override
+	public boolean deleteDataSet(String id) {
+		boolean done = super.deleteDataSet(id);
+		return FileUtils.deleteQuietly(getFile(id)) || done;
+	}
+
+	@Override
+	public void deleteDir(String folder) {
+		super.deleteDir(folder);
+		FileUtils.deleteQuietly(getFile(folder));
 	}
 
 	@Override
@@ -95,8 +114,8 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		DataSetInfo newInfo = catalog.moveDataSetInfo(id, newId);
 		
 		try {
-			File srcDir = getFile(oldInfo);
-			File destDir = getFile(newInfo);
+			File srcDir = getFile(oldInfo.getId());
+			File destDir = getFile(newInfo.getId());
 			FileUtils.moveDirectory(srcDir, destDir);
 			
 			return toDataSet(newInfo);
@@ -108,33 +127,40 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		}
 	}
 	
-	private File getFile(DataSetInfo info) {
-		return new File(m_root, info.getId().substring(1));
+	private File getFile(String id) {
+		if ( id.startsWith("/") ) {
+			id = id.substring(1);
+		}
+		
+		return new File(m_root, id);
 	}
 
 	@Override
 	protected DataSet toDataSet(DataSetInfo info) {
-		return new LfsDataSet(this, info);
+		return new LfsDataSet(this, info, getFile(info.getId()));
 	}
 
-	public final class LfsDataSet extends AbstractDataSet<LfsAvroDataSetServer> {
-		public LfsDataSet(LfsAvroDataSetServer server, DataSetInfo info) {
+	public static final class LfsDataSet extends AbstractDataSet<LfsAvroDataSetServer> {
+		private final File m_start;
+		
+		public LfsDataSet(LfsAvroDataSetServer server, DataSetInfo info, File start) {
 			super(server, info);
+			
+			m_start = start;
 		}
 		
 		public File getFile() {
-			return new File(m_root, m_info.getId().substring(1));
+			return m_start;
 		}
 
 		@Override
 		public RecordStream read() {
-			return MultiFileAvroReader.scan(m_root).read();
+			return MultiFileAvroReader.scan(m_start).read();
 		}
 
 		@Override
 		public long write(RecordStream stream) {
-			File file = getFile();
-			File partFile = new File(file, UUID.randomUUID().toString() + ".avro");
+			File partFile = new File(m_start, UUID.randomUUID().toString() + ".avro");
 			return new AvroFileRecordWriter(partFile).write(stream);
 		}
 	
