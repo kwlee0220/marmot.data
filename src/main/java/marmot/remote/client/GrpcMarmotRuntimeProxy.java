@@ -10,7 +10,8 @@ import marmot.file.FileServer;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class GrpcMarmotRuntimeProxy implements MarmotRuntime {
+public class GrpcMarmotRuntimeProxy implements MarmotRuntime, AutoCloseable {
+	private ManagedChannel m_channel;
 	private GrpcDataSetServerProxy m_dsServer;
 	private GrpcFileServerProxy m_fileServer;
 	
@@ -22,8 +23,14 @@ public class GrpcMarmotRuntimeProxy implements MarmotRuntime {
 	}
 	
 	public GrpcMarmotRuntimeProxy(ManagedChannel channel) {
+		m_channel = channel;
 		m_dsServer = new GrpcDataSetServerProxy(channel);
 		m_fileServer = new GrpcFileServerProxy(channel);
+	}
+
+	@Override
+	public void close() {
+		m_channel.shutdown();
 	}
 
 	@Override
