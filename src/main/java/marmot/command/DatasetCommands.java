@@ -424,8 +424,13 @@ public class DatasetCommands {
 		@Override
 		public void run(MarmotRuntime marmot) throws Exception {
 			StopWatch watch = StopWatch.start();
-			
+
 			RecordReader reader = CsvRecordReader.from(m_start, m_csvParams, m_glob);
+			reader = m_csvParams.pointColumns().transform(reader, (r, tup) -> {
+				r = r.addGeometryPoint(tup._3, tup._4, tup._1, tup._2);
+				r = r.project(String.format("%s,*-{%s,%s,%s}", tup._1, tup._1, tup._3, tup._4));
+				return r;
+			});
 			
 			DataSetInfo info = new DataSetInfo(m_dsId, reader.getRecordSchema());
 			DataSet ds = marmot.getDataSetServer().createDataSet(info, m_force);
