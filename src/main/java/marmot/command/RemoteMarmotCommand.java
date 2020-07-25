@@ -27,6 +27,7 @@ import picocli.CommandLine.Spec;
 import utils.PicocliCommand;
 import utils.UsageHelp;
 import utils.func.FOption;
+import utils.io.IOUtils;
 
 /**
  * 
@@ -44,24 +45,34 @@ public abstract class RemoteMarmotCommand implements PicocliCommand<GrpcMarmotRu
 	@Option(names={"--port", "-p"}, paramLabel="number", description={"host port number"})
 	@Nullable private int m_port = -1;
 	
+	@Option(names={"-v"}, description={"verbose"})
+	private boolean m_verbose = false;
+	
 	@Nullable private GrpcMarmotRuntimeProxy m_marmot;
 	
 	protected abstract void run(GrpcMarmotRuntimeProxy marmot) throws Exception;
 
+	@SuppressWarnings("deprecation")
 	public static final void run(RemoteMarmotCommand cmd, String... args) throws Exception {
 		new CommandLine(cmd).parseWithHandler(new RunLast(), System.err, args);
 	}
 	
 	@Override
 	public void run() {
+		GrpcMarmotRuntimeProxy marmot = null;
 		try {
-			GrpcMarmotRuntimeProxy marmot = getInitialContext();
+			configureLog4j();
+			
+			marmot = getInitialContext();
 			run(marmot);
 		}
 		catch ( Exception e ) {
 			System.err.printf("failed: %s%n%n", e);
 			
 			m_spec.commandLine().usage(System.out, Ansi.OFF);
+		}
+		finally {
+			IOUtils.closeQuietly(marmot);
 		}
 	}
 
@@ -89,7 +100,9 @@ public abstract class RemoteMarmotCommand implements PicocliCommand<GrpcMarmotRu
 		String homeDir = FOption.ofNullable(System.getenv(ENVVAR_HOME))
 								.getOrElse(() -> System.getProperty("user.dir"));
 		File propsFile = new File(homeDir, "log4j.properties");
-		System.out.printf("use log4j.properties: file=%s%n", propsFile);
+		if ( m_verbose ) {
+			System.out.printf("use log4j.properties: file=%s%n", propsFile);
+		}
 		
 		Properties props = new Properties();
 		try ( InputStream is = new FileInputStream(propsFile) ) {
