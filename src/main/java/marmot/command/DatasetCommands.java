@@ -50,8 +50,7 @@ public class DatasetCommands {
 		private boolean m_details;
 
 		@Override
-		public void run(MarmotRuntime ctxt) throws Exception {
-			MarmotRuntime marmot = (MarmotRuntime)ctxt;
+		public void run(MarmotRuntime marmot) throws Exception {
 			DataSetServer dsServer = marmot.getDataSetServer();
 			
 			List<DataSet> dsList;

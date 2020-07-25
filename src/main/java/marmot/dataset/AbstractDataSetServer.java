@@ -27,7 +27,7 @@ public abstract class AbstractDataSetServer implements DataSetServer {
 	public DataSet createDataSet(DataSetInfo dsInfo, boolean force) throws DataSetExistsException {
 		Utilities.checkNotNullArgument(dsInfo, "DataSetInfo is null");
 		
-		// 'force' 옵션이 있는 경우는 식별자에 해당하는 미리 삭제한다.
+		// 'force' 옵션이 있는 경우는 식별자에 해당하는 데이터 세트를 미리 삭제한다.
 		// 주어진 식별자가 폴더인 경우는 폴더 전체를 삭제한다.
 		if ( force ) {
 			deleteDir(dsInfo.getId());
