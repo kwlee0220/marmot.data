@@ -19,6 +19,7 @@ import marmot.optor.ProjectedReader;
 import marmot.optor.RenameRecordReader;
 import marmot.optor.ScriptFilteredReader;
 import marmot.optor.TakenReader;
+import marmot.optor.geo.ToGeometryPointReader;
 import marmot.optor.geo.TransformSridReader;
 import marmot.support.RecordListDataSource;
 import marmot.support.RecordScript;
@@ -65,6 +66,10 @@ public interface RecordReader {
 	
 	public default RecordReader peek(Consumer<Record> action) {
 		return new PeekingDataSet(this, action);
+	}
+	
+	public default RecordReader addGeometryPoint(String xcol, String ycol, String geomCol, String srid) {
+		return new ToGeometryPointReader(this, xcol, ycol, geomCol, srid);
 	}
 	
 	public default RecordReader transformSrid(String tarSrid) {
