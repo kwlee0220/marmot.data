@@ -37,7 +37,7 @@ public class MultiFileAvroReader implements RecordReader {
 	}
 	
 	public static MultiFileAvroReader scan(File start) {
-		return scan(start, "*.avro");
+		return scan(start, "**/*.avro");
 	}
 	
 	private MultiFileAvroReader(File start, String glob) {
