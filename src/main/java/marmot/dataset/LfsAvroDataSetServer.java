@@ -13,8 +13,8 @@ import marmot.RecordStream;
 import marmot.avro.AvroFileRecordWriter;
 import marmot.avro.AvroUtils;
 import marmot.avro.MultiFileAvroReader;
+import marmot.stream.StatsCollectingRecordStream;
 import utils.func.Try;
-import utils.io.IOUtils;
 import utils.jdbc.JdbcProcessor;
 
 /**
@@ -62,35 +62,34 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 	}
 	
 	@Override
-	public DataSet createDataSet(DataSetInfo dsInfo, boolean force) throws DataSetExistsException {
+	public DataSet createDataSet(DataSetInfo dsInfo, boolean force) throws DataSetException {
 		LfsDataSet ds = (LfsDataSet)super.createDataSet(dsInfo, force);
-		File file = ds.getFile();
 		
-		if ( force && file.exists() ) {
-			try {
+		File file = ds.getFile();
+		try {
+			if ( force && file.exists() ) {
 				FileUtils.forceDelete(file);
-				FileUtils.forceMkdir(file);
 			}
-			catch ( IOException e ) {
-				throw new DataSetException("fails to clean up files: " + file, e);
-			}
+			FileUtils.forceMkdir(file);
+		}
+		catch ( IOException e ) {
+			throw new DataSetException("fails to create an LfsDataSet: file=" + file, e);
 		}
 		
+		// 생성될 데이터세트의 스키마 정보를 기록한 '_schema.avsc'파일을 생성한다.
+		// 데이터세트의 스키마 정보는 각 avro 파일에 기록된 스키마 정보 대신
+		// 이 파일의 정보를 사용한다. 왜냐하면 spark을 이용하여 데이터세트를 생성하는 경우
+		// avro 파일에 기록된 스키마 장보가 올바르지 않을 수 있기 때문임
+		//
 		Schema avroSchema = AvroUtils.toSchema(dsInfo.getRecordSchema());
 		File schemaFile = new File(file, "_schema.avsc");
-		PrintWriter pw = null;
-		try {
-			FileUtils.forceMkdirParent(schemaFile);
-			pw = new PrintWriter(new FileWriter(schemaFile));
+		try ( PrintWriter pw = new PrintWriter(new FileWriter(schemaFile)) ) {
 			pw.println(avroSchema.toString(true));
 			
 			return ds;
 		}
 		catch ( IOException e ) {
-			throw new DataSetException("fails to write avro schema file: " + schemaFile, e);
-		}
-		finally {
-			IOUtils.closeQuietly(pw);
+			throw new DataSetException("fails to write the dataset schema file: " + schemaFile, e);
 		}
 	}
 
@@ -161,7 +160,15 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		@Override
 		public long write(RecordStream stream) {
 			File partFile = new File(m_start, UUID.randomUUID().toString() + ".avro");
-			return new AvroFileRecordWriter(partFile).write(stream);
+			
+			StatsCollectingRecordStream collector = stream.collectStats();
+			long cnt = new AvroFileRecordWriter(partFile).write(collector);
+			
+			m_info.setRecordCount(collector.getRecordCount());
+			m_info.setBounds(collector.getBounds());
+			m_server.getCatalog().updateDataSetInfo(m_info);
+			
+			return cnt;
 		}
 	
 		@Override
