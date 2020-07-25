@@ -86,6 +86,7 @@ public class AvroDeserializer extends AbstractRecordStream {
 				return null;
 			}
 
+			m_record.clearCache();
 			m_reader.read(m_record.getGenericRecord(), m_decoder);
 			return m_record;
 		}
