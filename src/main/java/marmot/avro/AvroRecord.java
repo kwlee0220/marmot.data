@@ -16,12 +16,12 @@ import marmot.type.TypeClass;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-class AvroRecord implements Record {
+public class AvroRecord implements Record {
 	private final RecordSchema m_schema;
 	private GenericRecord m_grecord;
 	private final Object[] m_cache;
 	
-	AvroRecord(RecordSchema schema, GenericRecord record) {
+	public AvroRecord(RecordSchema schema, GenericRecord record) {
 		m_schema = schema;
 		m_grecord = record;
 		m_cache = new Object[m_schema.getColumnCount()];

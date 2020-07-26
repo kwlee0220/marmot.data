@@ -3,10 +3,13 @@ package marmot.remote.client;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.avro.Schema;
+
 import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
-import marmot.avro.AvroDeserializer;
+import marmot.avro.AvroBinaryRecordReader;
+import marmot.avro.AvroUtils;
 import marmot.dataset.AbstractDataSet;
 import marmot.dataset.DataSetInfo;
 
@@ -15,8 +18,12 @@ import marmot.dataset.DataSetInfo;
  * @author Kang-Woo Lee (ETRI)
  */
 public class GrpcDataSetProxy extends AbstractDataSet<GrpcDataSetServerProxy> {
+	private final Schema m_avroSchema;
+	
 	GrpcDataSetProxy(GrpcDataSetServerProxy service, DataSetInfo info) {
 		super(service, info);
+		
+		m_avroSchema = AvroUtils.toSchema(info.getRecordSchema());
 	}
 
 	@Override
@@ -25,7 +32,7 @@ public class GrpcDataSetProxy extends AbstractDataSet<GrpcDataSetServerProxy> {
 		InputStream is = m_server.readDataSet(m_info.getId());
 		
 		try {
-			return AvroDeserializer.deserialize(schema, is);
+			return AvroBinaryRecordReader.deserialize(schema, m_avroSchema, is);
 		}
 		catch ( IOException e ) {
 			throw new RecordStreamException("" + e);

@@ -15,7 +15,7 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import marmot.RecordStream;
-import marmot.avro.AvroSerializer;
+import marmot.avro.AvroBinaryRecordWriter;
 import marmot.avro.AvroUtils;
 import marmot.dataset.DataSet;
 import marmot.dataset.DataSetExistsException;
@@ -199,7 +199,7 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 			suos.setOutgoingChannel(channel);
 
 			Schema avroSchema = AvroUtils.toSchema(stream.getRecordSchema());
-			AvroSerializer ser = new AvroSerializer(avroSchema, suos);
+			AvroBinaryRecordWriter ser = new AvroBinaryRecordWriter(avroSchema, suos);
 			ser.write(stream);
 			suos.close();
 			

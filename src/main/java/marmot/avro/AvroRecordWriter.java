@@ -46,10 +46,6 @@ public abstract class AvroRecordWriter implements RecordWriter, LoggerSettable {
 		return new AvroFileRecordWriter(file);
 	}
 	
-	public static AvroRecordWriter into() {
-		return new AvroBytesRecordWriter();
-	}
-	
 	public FOption<Integer> getSyncInterval() {
 		return FOption.ofNullable(m_syncInterval);
 	}

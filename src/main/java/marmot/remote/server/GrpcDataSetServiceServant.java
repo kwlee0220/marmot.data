@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ import io.grpc.stub.StreamObserver;
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStream;
-import marmot.avro.AvroDeserializer;
+import marmot.avro.AvroBinaryRecordReader;
 import marmot.avro.AvroUtils;
 import marmot.dataset.DataSet;
 import marmot.dataset.DataSetExistsException;
@@ -303,7 +304,8 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 				RecordSchema schema = ds.getRecordSchema();
 
 				s_logger.debug("writing dataset: id={}...", dsId);
-				RecordStream input = AvroDeserializer.deserialize(schema, is);
+				Schema avroSchema = AvroUtils.toSchema(schema);
+				RecordStream input = AvroBinaryRecordReader.deserialize(schema, avroSchema, is);
 				ds.write(input);
 				
 				return ds.getDataSetInfo().toProto().toByteString();

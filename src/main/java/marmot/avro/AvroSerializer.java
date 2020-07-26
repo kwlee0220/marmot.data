@@ -7,73 +7,46 @@ import java.io.OutputStream;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.Encoder;
+import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.EncoderFactory;
-
-import marmot.Record;
-import marmot.RecordStream;
-import marmot.RecordStreamException;
-import marmot.RecordWriter;
-import utils.Utilities;
-import utils.io.IOUtils;
 
 /**
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class AvroSerializer implements RecordWriter {
+public class AvroSerializer {
+	private static final EncoderFactory ENC_FACT = EncoderFactory.get();
+
 	private final Schema m_avroSchema;
-	private final OutputStream m_os;
+	private final GenericDatumWriter<GenericRecord> m_writer;
+	private BinaryEncoder m_encoder;
 	
-	public AvroSerializer(Schema avroSchema, OutputStream os) {
-		Utilities.checkNotNullArgument(avroSchema);
-		Utilities.checkNotNullArgument(os);
-		
-		m_avroSchema = avroSchema;
-		m_os = os;
+	public AvroSerializer(Schema schema) {
+		m_avroSchema = schema;
+		m_writer = new GenericDatumWriter<>(m_avroSchema);
+	}
+	
+	public Schema getAvroSchema() {
+		return m_avroSchema;
 	}
 
-	@Override
-	public long write(RecordStream stream) {
-		Utilities.checkNotNullArgument(stream, "Input RecordStream");
-		
-		GenericDatumWriter<GenericRecord> m_writer = new GenericDatumWriter<>(m_avroSchema);
+	public void serialize(GenericRecord record, OutputStream os) throws IOException {
+		m_encoder = ENC_FACT.binaryEncoder(os, m_encoder);
+		m_writer.write(record, m_encoder);
+		m_encoder.flush();
+	}
+
+	public byte[] serializeToBytes(GenericRecord record) {
 		try {
-			Encoder encoder = EncoderFactory.get().binaryEncoder(m_os, null);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			m_encoder = EncoderFactory.get().binaryEncoder(baos, m_encoder);
+			m_writer.write(record, m_encoder);
+			m_encoder.flush();
 			
-			long count = 0;
-			for ( Record record = stream.next(); record != null; record = stream.next() ) {
-				if ( record instanceof AvroRecord ) {
-					GenericRecord grec = ((AvroRecord)record).getGenericRecord();
-					m_writer.write(grec, encoder);
-				}
-				else {
-					GenericRecord grec = AvroUtils.toGenericRecord(record, m_avroSchema);
-					m_writer.write(grec, encoder);
-				}
-				++count;
-			}
-			encoder.flush();
-			
-			return count;
+			return baos.toByteArray();
 		}
 		catch ( IOException e ) {
-			throw new RecordStreamException("" + e);
+			throw new AssertionError(e);
 		}
-	}
-	
-	public static byte[] writeToBytes(RecordStream stream) {
-		Schema avroSchema = AvroUtils.toSchema(stream.getRecordSchema());
-		
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try {
-			AvroSerializer ser = new AvroSerializer(avroSchema, baos);
-			ser.write(stream);
-		}
-		finally {
-			IOUtils.closeQuietly(baos);
-		}
-		
-		return baos.toByteArray();
 	}
 }
