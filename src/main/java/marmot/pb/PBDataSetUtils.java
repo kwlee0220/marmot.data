@@ -6,6 +6,10 @@ import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
 
+import marmot.proto.CoordinateProto;
+import marmot.proto.EnvelopeProto;
+import marmot.proto.GeometryProto;
+import marmot.proto.TypeCodeProto;
 import marmot.type.GeometryCollectionType;
 import marmot.type.GeometryDataType;
 import marmot.type.GeometryType;
@@ -16,10 +20,6 @@ import marmot.type.MultiPolygonType;
 import marmot.type.PointType;
 import marmot.type.PolygonType;
 import marmot.type.TypeClass;
-import proto.CoordinateProto;
-import proto.EnvelopeProto;
-import proto.GeometryProto;
-import proto.TypeCodeProto;
 
 /**
  * 

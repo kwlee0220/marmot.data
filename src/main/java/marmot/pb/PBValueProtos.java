@@ -11,11 +11,11 @@ import com.vividsolutions.jts.geom.Geometry;
 
 import marmot.Record;
 import marmot.RecordSchema;
+import marmot.proto.RecordProto;
+import marmot.proto.TypeCodeProto;
+import marmot.proto.ValueProto;
 import marmot.type.GeometryDataType;
 import marmot.type.TypeClass;
-import proto.RecordProto;
-import proto.TypeCodeProto;
-import proto.ValueProto;
 import utils.LocalDateTimes;
 import utils.LocalDates;
 import utils.LocalTimes;

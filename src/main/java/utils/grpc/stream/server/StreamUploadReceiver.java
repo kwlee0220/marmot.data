@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
-import proto.stream.DownMessage;
-import proto.stream.UpMessage;
+import marmot.proto.DownMessage;
+import marmot.proto.UpMessage;
 import utils.UnitUtils;
 import utils.Utilities;
 import utils.async.AbstractThreadedExecution;

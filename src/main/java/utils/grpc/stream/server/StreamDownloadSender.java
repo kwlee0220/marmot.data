@@ -17,8 +17,8 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
-import proto.stream.DownMessage;
-import proto.stream.UpMessage;
+import marmot.proto.DownMessage;
+import marmot.proto.UpMessage;
 import utils.StopWatch;
 import utils.Throwables;
 import utils.UnitUtils;

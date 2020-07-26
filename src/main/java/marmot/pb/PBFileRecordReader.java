@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import marmot.RecordSchema;
-import proto.StringProto;
+import marmot.proto.StringProto;
 import utils.func.Tuple;
 
 

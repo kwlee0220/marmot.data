@@ -9,9 +9,9 @@ import javax.annotation.Nullable;
 import com.vividsolutions.jts.geom.Envelope;
 
 import marmot.RecordSchema;
+import marmot.dataset.proto.DataSetInfoProto;
 import marmot.pb.PBDataSetUtils;
 import marmot.remote.PBSerializable;
-import proto.dataset.DataSetInfoProto;
 import utils.Utilities;
 import utils.func.FOption;
 

@@ -1,11 +1,9 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "proto";
+option java_package = "marmot.proto";
 
-package proto;
-
-import "base.proto";
+package marmot.proto;
 
 enum TypeCodeProto {
 	NULL = 0;
@@ -36,6 +34,63 @@ enum TypeCodeProto {
 	
 	LIST = 23;
 	RECORd = 24;
+}
+
+message ErrorProto {
+	enum Code {
+		INVALID_ARGUMENT = 0;
+		INVALID_STATE = 1;
+		NOT_FOUND = 2;
+		ALREADY_EXISTS = 3;
+		CANCELLED = 4;
+		TIMEOUT = 5;
+		IO_ERROR = 6;
+		GRPC_STATUS = 98;
+		INTERNAL = 99;
+	}
+	
+	Code code = 1;
+	string details = 2;
+}
+
+message VoidProto { }
+message VoidResponse {
+	oneof either {
+		VoidProto value = 1;
+		ErrorProto error = 2;
+	}
+}
+
+message Int32Proto { int32 value = 1; }
+message Int32Response {
+	oneof either {
+		int32 value = 1;
+		ErrorProto error = 2;
+	}
+}
+
+message Int64Proto { int64 value = 1; }
+message Int64Response {
+	oneof either {
+		int64 value = 1;
+		ErrorProto error = 2;
+	}
+}
+
+message StringProto { string value = 1; }
+message StringResponse {
+	oneof either {
+		StringProto value = 1;
+		ErrorProto error = 2;
+	}
+}
+
+message BoolProto { bool value = 1; }
+message BoolResponse {
+	oneof either {
+		BoolProto value = 1;
+		ErrorProto error = 2;
+	}
 }
 
 message CoordinateProto {
@@ -101,4 +156,25 @@ message RecordResponse {
 }
 message RecordSetProto {
 	repeated RecordProto record = 1;
+}
+
+message UpMessage {
+	oneof either {	
+		bytes header = 1;
+		bytes block = 2;
+		ErrorProto error = 3;
+		VoidProto eos = 4;
+		VoidProto dummy = 5;
+		uint64 offset = 6;
+	}
+}
+message DownMessage {
+	oneof either {
+		bytes result = 1;
+		bytes block = 2;
+		ErrorProto error = 3;
+		VoidProto eos = 4;
+		VoidProto dummy = 5;
+		uint64 offset = 6;
+	}
 }
