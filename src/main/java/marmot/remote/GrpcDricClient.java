@@ -8,8 +8,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import marmot.dataset.DataSet;
 import marmot.dataset.DataSetNotFoundException;
-import marmot.remote.client.GrpcDataSetProxy;
 import marmot.remote.client.GrpcDataSetServerProxy;
 
 /**
@@ -59,7 +59,7 @@ public class GrpcDricClient {
 		return m_service;
 	}
 	
-	public GrpcDataSetProxy getDataSet(String id) throws DataSetNotFoundException {
+	public DataSet getDataSet(String id) throws DataSetNotFoundException {
 		return m_service.getDataSet(id);
 	}
 

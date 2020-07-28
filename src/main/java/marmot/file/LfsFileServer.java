@@ -61,4 +61,9 @@ public class LfsFileServer implements FileServer {
 			throw new MarmotFileException("fails to traverse: start=" + start, e);
 		}
 	}
+	
+	@Override
+	public String toString() {
+		return String.format("%s[root=%s]", getClass().getSimpleName(), m_root);
+	}
 }

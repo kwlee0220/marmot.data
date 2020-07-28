@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import marmot.MarmotLfsServer;
+import marmot.dataset.LfsAvroDataSetServer;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Mixin;
@@ -26,6 +27,7 @@ import picocli.CommandLine.RunLast;
 import picocli.CommandLine.Spec;
 import utils.PicocliCommand;
 import utils.UsageHelp;
+import utils.Utilities;
 import utils.func.FOption;
 import utils.jdbc.JdbcProcessor;
 
@@ -36,18 +38,23 @@ import utils.jdbc.JdbcProcessor;
 public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsServer> {
 	private static final Logger s_logger = LoggerFactory.getLogger(MarmotLocalFsCommand.class);
 	private static final String ENVVAR_HOME = "MARMOT_HOME";
+	private static final String CATALOG_JDBC = "h2_local::0:sa::~/catalog";
+	private static final File DATASET_STORE_ROOT = new File(Utilities.getHomeDir(), "datasets"); 
 	
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 
-	@Option(names={"--root"}, paramLabel="path", description={"Dataset root directory"})
-	@Nullable private File m_rootDir = new File(new File(System.getProperty("user.home")), "datasets");
+	@Option(names={"--root"}, paramLabel="path", description={"Dataset store root directory"})
+	@Nullable private File m_rootDir = DATASET_STORE_ROOT;
 
-	@Option(names={"--jdbc"}, paramLabel="<system>:", description={"JDBC connection string"})
-	@Nullable private String m_jdbcStr;
+	@Option(names={"--catalog"}, paramLabel="jdbc_str", description={"JDBC String"})
+	@Nullable private String m_catalogJdbcStr = CATALOG_JDBC;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	protected boolean m_verbose = false;
+	
+	@Option(names={"-f", "--format"}, description={"format"})
+	protected boolean m_format = false;
 	
 	@Nullable private MarmotLfsServer m_marmot;
 	
@@ -75,15 +82,12 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	
 	public MarmotLfsServer getInitialContext() throws Exception {
 		if ( m_marmot == null ) {
-			if ( m_jdbcStr == null ) {
-				m_jdbcStr = System.getenv("MARMOT_JDBC");
-				if ( m_jdbcStr == null ) {
-					throw new IllegalArgumentException("Catalog's jdbc string is missing");
-				}
+			if ( m_format ) {
+				JdbcProcessor jdbc = JdbcProcessor.parseString(m_catalogJdbcStr);
+				LfsAvroDataSetServer.format(jdbc, m_rootDir);
 			}
 			
-			JdbcProcessor jdbc = JdbcProcessor.parseString(m_jdbcStr);
-			m_marmot = new MarmotLfsServer(jdbc, m_rootDir);
+			m_marmot = new MarmotLfsServer(m_catalogJdbcStr, m_rootDir);
 		}
 		
 		return m_marmot;

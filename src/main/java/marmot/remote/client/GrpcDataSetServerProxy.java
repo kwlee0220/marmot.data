@@ -7,6 +7,8 @@ import static utils.grpc.PBUtils.VOID;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import org.apache.avro.Schema;
 
@@ -36,6 +38,7 @@ import marmot.proto.StringResponse;
 import marmot.proto.UpMessage;
 import marmot.proto.VoidResponse;
 import utils.Throwables;
+import utils.grpc.AlreadyExistsException;
 import utils.grpc.PBUtils;
 import utils.grpc.stream.client.StreamDownloadReceiver;
 import utils.grpc.stream.client.StreamUploadOutputStream;
@@ -50,20 +53,31 @@ import utils.stream.FStream;
 public class GrpcDataSetServerProxy implements DataSetServer {
 	private final DataSetServiceBlockingStub m_blockStub;
 	private final DataSetServiceStub m_stub;
+	private UnaryOperator<DataSet> m_interceptor;
 
 	public GrpcDataSetServerProxy(ManagedChannel channel) {
 		m_stub = DataSetServiceGrpc.newStub(channel);
 		m_blockStub = DataSetServiceGrpc.newBlockingStub(channel);
 	}
 	
+	public void setDataSetInterceptor(UnaryOperator<DataSet> interceptor) {
+		m_interceptor = interceptor;
+	}
+	
 	@Override
 	public DataSet createDataSet(DataSetInfo dsInfo, boolean force) throws DataSetExistsException {
 		CreateDataSetRequest req  = CreateDataSetRequest.newBuilder()
 														.setId(dsInfo.getId())
+														.setType(dsInfo.getType().name())
 														.setRecordSchema(dsInfo.getRecordSchema().toTypeId())
 														.setForce(force)
 														.build();
-		return toDataSet(m_blockStub.createDataSet(req));
+		try {
+			return toDataSet(m_blockStub.createDataSet(req));
+		}
+		catch ( AlreadyExistsException e ) {
+			throw new DataSetExistsException(e.getLocalizedMessage());
+		}
 	}
 	
 	@Override
@@ -72,7 +86,7 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 	}
 	
 	@Override
-	public GrpcDataSetProxy getDataSet(String dsId) {
+	public DataSet getDataSet(String dsId) {
 		DataSetInfoResponse resp = m_blockStub.getDataSetInfo(STRING(dsId));
 		return toDataSet(resp);
 	}
@@ -124,14 +138,14 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 	}
 	
 	@Override
-	public List<String> getDirAll() {
+	public Set<String> getDirAll() {
 		return FStream.from(m_blockStub.getDirAll(VOID()))
 						.map(PBUtils::handle)
-						.toList();
+						.toSet();
 	}
 	
 	@Override
-	public List<String> getSubDirAll(String folder, boolean recursive) {
+	public Set<String> getSubDirAll(String folder, boolean recursive) {
 		DirectoryTraverseRequest req = DirectoryTraverseRequest.newBuilder()
 																.setDirectory(folder)
 																.setRecursive(recursive)
@@ -139,7 +153,7 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 		Iterator<StringResponse> resp = m_blockStub.getSubDirAll(req);
 		return FStream.from(resp)
 						.map(PBUtils::handle)
-						.toList();
+						.toSet();
 	}
 	
 	@Override
@@ -212,11 +226,15 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 		}
 	}
 	
-	GrpcDataSetProxy toDataSet(DataSetInfoResponse resp) {
+	DataSet toDataSet(DataSetInfoResponse resp) {
 		switch ( resp.getEitherCase() ) {
 			case DATASET_INFO:
 				DataSetInfo dsInfo = DataSetInfo.fromProto(resp.getDatasetInfo());
-				return new GrpcDataSetProxy(this, dsInfo);
+				DataSet ds = new GrpcDataSetProxy(this, dsInfo);
+				if ( m_interceptor != null ) {
+					ds = m_interceptor.apply(ds);
+				}
+				return ds;
 			case ERROR:
 				switch ( resp.getError().getCode() ) {
 					case NOT_FOUND:

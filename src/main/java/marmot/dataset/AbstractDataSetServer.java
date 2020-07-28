@@ -1,6 +1,7 @@
 package marmot.dataset;
 
 import java.util.List;
+import java.util.Set;
 
 import utils.Utilities;
 import utils.stream.FStream;
@@ -100,12 +101,12 @@ public abstract class AbstractDataSetServer implements DataSetServer {
 //	}
 
 	@Override
-	public List<String> getDirAll() {
+	public Set<String> getDirAll() {
 		return m_catalog.getDirAll();
 	}
 
 	@Override
-	public List<String> getSubDirAll(String folder, boolean recursive) {
+	public Set<String> getSubDirAll(String folder, boolean recursive) {
 		return m_catalog.getSubDirAll(folder, recursive);
 	}
 

@@ -10,7 +10,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import marmot.dataset.LfsAvroDataSetServer;
-import marmot.dataset.LocalFsCatalog;
 import marmot.file.LfsFileServer;
 import utils.jdbc.JdbcProcessor;
 
@@ -21,24 +20,25 @@ import utils.jdbc.JdbcProcessor;
 public class MarmotLfsServer implements MarmotRuntime, Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private final JdbcProcessor m_jdbc;
+	private final String m_jdbcStr;
 	private final File m_root;
 	private final LfsAvroDataSetServer m_dsServer;
 	private final LfsFileServer m_fileServer;
 	
-	public MarmotLfsServer(JdbcProcessor jdbc, File root) {
-		m_jdbc = jdbc;
+	public MarmotLfsServer(String jdbcStr, File root) {
+		m_jdbcStr = jdbcStr;
 		m_root = root;
 		
+		JdbcProcessor jdbc = JdbcProcessor.parseString(jdbcStr);
 		m_dsServer = new LfsAvroDataSetServer(jdbc, m_root);
 		m_fileServer = new LfsFileServer(m_root);
 	}
 	
-	public static MarmotLfsServer format(JdbcProcessor jdbc, File root) throws IOException {
-		LocalFsCatalog.dropCatalog(jdbc);
-		LocalFsCatalog catalog = LocalFsCatalog.createCatalog(root, jdbc);
+	public static MarmotLfsServer format(String jdbcStr, File root) throws IOException {
+		JdbcProcessor jdbc = JdbcProcessor.parseString(jdbcStr);
+		LfsAvroDataSetServer.format(jdbc, root);
 		
-		return new MarmotLfsServer(jdbc, root);
+		return new MarmotLfsServer(jdbcStr, root);
 	}
 
 	@Override
@@ -66,7 +66,7 @@ public class MarmotLfsServer implements MarmotRuntime, Serializable {
 		private SerializationProxy(MarmotLfsServer marmot) {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try ( ObjectOutputStream out = new ObjectOutputStream(baos) ) {
-				out.writeObject(marmot.m_jdbc);
+				out.writeUTF(marmot.m_jdbcStr);
 				out.writeUTF(marmot.m_root.getAbsolutePath());
 			}
 			catch ( IOException nerverHappens ) { }
@@ -75,10 +75,10 @@ public class MarmotLfsServer implements MarmotRuntime, Serializable {
 		
 		private Object readResolve() {
 			try ( ObjectInputStream dis = new ObjectInputStream(new ByteArrayInputStream(m_confBytes)) ) {
-				JdbcProcessor jdbc = (JdbcProcessor)dis.readObject();
-				String rootPath = dis.readUTF();
+				String jdbcStr = dis.readUTF();
+				File datasetRoot = new File(dis.readUTF());
 				
-				return new LocalFsCatalog(new File(rootPath), jdbc);
+				return new MarmotLfsServer(jdbcStr, datasetRoot);
 			}
 			catch ( Exception e ) {
 				throw new RuntimeException(e);

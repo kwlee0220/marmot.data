@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import marmot.MarmotRuntime;
-import marmot.dataset.DataSetServer;
 import marmot.file.FileServer;
 import utils.func.Try;
 
@@ -38,7 +37,7 @@ public class GrpcMarmotRuntimeProxy implements MarmotRuntime, AutoCloseable {
 	}
 
 	@Override
-	public DataSetServer getDataSetServer() {
+	public GrpcDataSetServerProxy getDataSetServer() {
 		return m_dsServer;
 	}
 

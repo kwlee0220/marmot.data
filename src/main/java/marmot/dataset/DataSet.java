@@ -26,6 +26,8 @@ public interface DataSet extends RecordReader, RecordWriter {
 	 */
 	public DataSetInfo getDataSetInfo();
 	
+	public DataSetType getType();
+	
 	/**
 	 * 본 데이터세트의 레코드 스키마를 반환한다.
 	 * 
@@ -46,6 +48,8 @@ public interface DataSet extends RecordReader, RecordWriter {
 	 * @return	레코드 수
 	 */
 	public long getRecordCount();
+	
+	public String getParameter();
 	
 	/**
 	 * 본 데이터세트의 크기를 반환한다.

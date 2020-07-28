@@ -17,12 +17,14 @@ import marmot.dataset.DataSetInfo;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class GrpcDataSetProxy extends AbstractDataSet<GrpcDataSetServerProxy> {
+public class GrpcDataSetProxy extends AbstractDataSet {
+	private final GrpcDataSetServerProxy m_server;
 	private final Schema m_avroSchema;
 	
 	GrpcDataSetProxy(GrpcDataSetServerProxy service, DataSetInfo info) {
-		super(service, info);
+		super(info);
 		
+		m_server = service;
 		m_avroSchema = AvroUtils.toSchema(info.getRecordSchema());
 	}
 

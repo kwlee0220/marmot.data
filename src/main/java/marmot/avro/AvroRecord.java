@@ -10,7 +10,6 @@ import marmot.Column;
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.type.DataType;
-import marmot.type.TypeClass;
 
 /**
  * 
@@ -54,27 +53,17 @@ public class AvroRecord implements Record {
 	@Override
 	public Object get(int index) {
 		Column col = m_schema.getColumnAt(index);
-		if ( col.type().typeClass() == TypeClass.STRING ||  col.type().isGeometryType() ) {
-			if ( m_cache[index] == null ) {
-				m_cache[index] = AvroUtils.fromAvroValue(col.type(), m_grecord.get(index));
-			}
-			return m_cache[index];	
+		if ( m_cache[index] == null ) {
+			m_cache[index] = AvroUtils.fromAvroValue(col.type(), m_grecord.get(index));
 		}
-		else {
-			return m_grecord.get(index);
-		}
+		return m_cache[index];
 	}
 
 	@Override
 	public Record set(int idx, Object value) {
 		DataType type = m_schema.getColumnAt(idx).type();
-		if ( type.typeClass() == TypeClass.STRING ) {
-			m_cache[idx] = value;
-		}
-		else if ( type.isGeometryType() ) {
-			m_cache[idx] = value;
-		}
-		
+
+		m_cache[idx] = value;
 		Object field = AvroUtils.toAvroValue(type, value);
 		m_grecord.put(idx,  field);
 		return this;

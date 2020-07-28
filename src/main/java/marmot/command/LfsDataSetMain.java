@@ -1,19 +1,8 @@
 package marmot.command;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.commons.text.StringSubstitutor;
-import org.apache.log4j.PropertyConfigurator;
-
-import com.google.common.collect.Maps;
-
 import marmot.MarmotLfsServer;
 import marmot.command.LfsDataSetMain.Format;
+import marmot.dataset.JdbcCatalog;
 import marmot.dataset.LfsAvroDataSetServer;
 import picocli.CommandLine.Command;
 import utils.PicocliSubCommand;
@@ -57,7 +46,9 @@ public class LfsDataSetMain extends MarmotLocalFsCommand {
 		@Override
 		public void run(MarmotLfsServer marmot) throws Exception {
 			LfsAvroDataSetServer server = marmot.getDataSetServer();
-			LfsAvroDataSetServer.format(server.getJdbcProcessor(), server.getRoot());
+			
+			JdbcCatalog catalog = (JdbcCatalog)server.getCatalog();
+			LfsAvroDataSetServer.format(catalog.getJdbcProcessor(), server.getRoot());
 		}
 	}
 }

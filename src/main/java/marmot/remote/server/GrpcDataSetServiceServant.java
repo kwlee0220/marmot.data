@@ -27,6 +27,7 @@ import marmot.dataset.DataSetExistsException;
 import marmot.dataset.DataSetInfo;
 import marmot.dataset.DataSetNotFoundException;
 import marmot.dataset.DataSetServer;
+import marmot.dataset.DataSetType;
 import marmot.dataset.proto.CreateDataSetRequest;
 import marmot.dataset.proto.DataSetInfoProto;
 import marmot.dataset.proto.DataSetInfoResponse;
@@ -72,9 +73,11 @@ public class GrpcDataSetServiceServant extends DataSetServiceImplBase {
 			RecordSchema schema = RecordSchema.fromTypeId(req.getRecordSchema());
 			boolean force = req.getForce();
 			
-			DataSetInfo dsInfo = new DataSetInfo(id, schema);
+			DataSetType type = DataSetType.valueOf(req.getType());
+			DataSetInfo dsInfo = new DataSetInfo(id, type, schema);
+			dsInfo.setParameter(req.getParameter());
 			DataSetInfo created = m_server.createDataSet(dsInfo, force).getDataSetInfo();
-			
+	
 			out.onNext(toDataSetInfoResponse(created));
 		}
 		catch ( Exception e ) {

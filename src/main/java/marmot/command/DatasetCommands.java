@@ -18,6 +18,7 @@ import marmot.csv.CsvRecordReader;
 import marmot.dataset.DataSet;
 import marmot.dataset.DataSetInfo;
 import marmot.dataset.DataSetServer;
+import marmot.dataset.DataSetType;
 import marmot.geojson.GeoJsonParameters;
 import marmot.geojson.GeoJsonRecordReader;
 import marmot.shp.ExportShapefileParameters;
@@ -163,12 +164,15 @@ public class DatasetCommands {
 			RecordSchema schema = ds.getRecordSchema();
 			Column geomCol = schema.findColumn("the_geom").getOrNull();
 
+			System.out.println("TYPE         : " + ds.getType());
 			if ( ds.getRecordCount() > 0 ) {
 				System.out.println("COUNT        : " + ds.getRecordCount());
 			}
 			else {
 				System.out.println("COUNT        : unknown");
 			}
+			String param = ds.getParameter();
+			System.out.println("PARAMETER    : " + ((param != null) ? param : "NONE"));
 			System.out.println("SIZE         : " + UnitUtils.toByteSizeString(ds.getLength()));
 			if ( geomCol != null ) {
 				System.out.println("GEOMETRY     : " + geomCol.name());
@@ -178,7 +182,7 @@ public class DatasetCommands {
 			System.out.println("COLUMNS      :");
 			ds.getRecordSchema().getColumns()
 					.stream()
-					.forEach(c -> System.out.println("\t" + c));
+					.forEach(c -> System.out.println("  " + c));
 		}
 	}
 
@@ -432,7 +436,7 @@ public class DatasetCommands {
 				return r;
 			});
 			
-			DataSetInfo info = new DataSetInfo(m_dsId, reader.getRecordSchema());
+			DataSetInfo info = new DataSetInfo(m_dsId, DataSetType.AVRO, reader.getRecordSchema());
 			DataSet ds = marmot.getDataSetServer().createDataSet(info, m_force);
 			long count = ds.write(reader.read());
 			
@@ -463,7 +467,7 @@ public class DatasetCommands {
 			
 			RecordReader reader = ShapefileReader.from(m_start, m_shpParams.charset());
 			
-			DataSetInfo info = new DataSetInfo(m_dsId, reader.getRecordSchema());
+			DataSetInfo info = new DataSetInfo(m_dsId, DataSetType.AVRO, reader.getRecordSchema());
 			DataSet ds = marmot.getDataSetServer().createDataSet(info, m_force);
 			long count = ds.write(reader.read());
 			
@@ -494,7 +498,7 @@ public class DatasetCommands {
 			
 			RecordReader reader = GeoJsonRecordReader.from(m_start, m_gjsonParams.charset());
 			
-			DataSetInfo info = new DataSetInfo(m_dsId, reader.getRecordSchema());
+			DataSetInfo info = new DataSetInfo(m_dsId, DataSetType.AVRO, reader.getRecordSchema());
 			DataSet ds = marmot.getDataSetServer().createDataSet(info, m_force);
 			long count = ds.write(reader.read());
 			

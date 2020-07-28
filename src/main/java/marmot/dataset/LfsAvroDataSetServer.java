@@ -24,14 +24,10 @@ import utils.jdbc.JdbcProcessor;
 public class LfsAvroDataSetServer extends AbstractDataSetServer {
 	private final File m_root;
 	
-	public LfsAvroDataSetServer(JdbcProcessor jdbc, File root) {
-		super(new Catalog(jdbc));
+	public LfsAvroDataSetServer(JdbcProcessor jdbc, File datasetRoot) {
+		super(new JdbcCatalog(jdbc));
 		
-		m_root = root;
-	}
-	
-	public JdbcProcessor getJdbcProcessor() {
-		return getCatalog().getJdbcProcessor();
+		m_root = datasetRoot;
 	}
 	
 	public File getRoot() {
@@ -44,21 +40,21 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		return new File(m_root, dsId.substring(1)).toURI().toString();
 	}
 	
-	public static LfsAvroDataSetServer format(JdbcProcessor jdbc, File root) throws IOException {
-		drop(jdbc, root);
-		return create(jdbc, root);
+	public static LfsAvroDataSetServer format(JdbcProcessor jdbc, File datasetRoot) throws IOException {
+		drop(jdbc, datasetRoot);
+		return create(jdbc, datasetRoot);
 	}
 	
-	public static LfsAvroDataSetServer create(JdbcProcessor jdbc, File root) throws IOException {
-		Catalog.createCatalog(jdbc);
-		FileUtils.forceMkdir(root);
+	public static LfsAvroDataSetServer create(JdbcProcessor jdbc, File datasetRoot) throws IOException {
+		JdbcCatalog.createCatalog(jdbc);
+		FileUtils.forceMkdir(datasetRoot);
 
-		return new LfsAvroDataSetServer(jdbc, root);
+		return new LfsAvroDataSetServer(jdbc, datasetRoot);
 	}
 	
-	public static void drop(JdbcProcessor jdbc, File root) {
-		Catalog.dropCatalog(jdbc);
-		Try.run(() -> FileUtils.deleteDirectory(root));
+	public static void drop(JdbcProcessor jdbc, File datasetRoot) {
+		JdbcCatalog.dropCatalog(jdbc);
+		Try.run(() -> FileUtils.deleteDirectory(datasetRoot));
 	}
 	
 	@Override
@@ -126,6 +122,12 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		Catalog catalog = getCatalog();
+		return String.format("%s[catalog=%s, datasets=%s]", getClass().getSimpleName(), catalog, m_root);
+	}
+	
 	private File getFile(String id) {
 		if ( id.startsWith("/") ) {
 			id = id.substring(1);
@@ -139,12 +141,14 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 		return new LfsDataSet(this, info, getFile(info.getId()));
 	}
 
-	public static final class LfsDataSet extends AbstractDataSet<LfsAvroDataSetServer> {
+	public static final class LfsDataSet extends AbstractDataSet {
+		private final LfsAvroDataSetServer m_server;
 		private final File m_start;
 		
 		public LfsDataSet(LfsAvroDataSetServer server, DataSetInfo info, File start) {
-			super(server, info);
+			super(info);
 			
+			m_server = server;
 			m_start = start;
 		}
 		

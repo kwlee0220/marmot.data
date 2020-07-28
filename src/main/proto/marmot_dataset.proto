@@ -33,17 +33,19 @@ service DataSetService {
 }
 
 enum DataSetTypeProto {
-	FILE = 0;
+	AVRO = 0;
+	MQTT = 1;
 }	
 
 message DataSetInfoProto {
 	string id = 1;							// 데이터세트 식별자
 	string record_schema = 2; 				// 데이터세트 컬럼 정보
-	uint64 count = 3;						// 데이터세트에 포함된 레코드 갯수
+	DataSetTypeProto type = 3;				// 데이터세트 타입
+	uint64 count = 4;						// 데이터세트에 포함된 레코드 갯수
 	oneof optional_bounds {
-		marmot.proto.EnvelopeProto bounds = 4;		// 데이터세트 MBR (default geometry column이 정의된 경우)
+		marmot.proto.EnvelopeProto bounds = 5;	// 데이터세트 MBR (default geometry column이 정의된 경우)
 	}
-	string file_path = 5;					// 데이터세트 저장 경로
+	string parameter = 6;					// 데이터세트 저장 경로
 }
 
 message DataSetInfoResponse {
@@ -55,8 +57,10 @@ message DataSetInfoResponse {
 
 message CreateDataSetRequest {
 	string id = 1;					// 생성하고자 하는 데이터세트의 식별자.
-	string record_schema = 2;		// 생성하고자 하는 데이터세트의 스키마.
-	bool force = 3;
+	string type = 2;
+	string record_schema = 3;		// 생성하고자 하는 데이터세트의 스키마.
+	string parameter = 4;
+	bool force = 5;
 }
 
 message MoveDataSetRequest {

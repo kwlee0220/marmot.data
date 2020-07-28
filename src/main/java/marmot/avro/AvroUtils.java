@@ -17,12 +17,15 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericArray;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 
 import marmot.Column;
@@ -59,7 +62,21 @@ public final class AvroUtils {
 			if ( dtype.isPrimitiveType() ) {
 				Schema colSchema = PRIMITIVES.get(((PrimitiveDataType)dtype).typeClass());
 				if ( colSchema == null ) {
-					throw new IllegalArgumentException("unsupported field type: column=" + col);
+//					if ( dtype.typeClass() == TypeClass.COORDINATE ) {
+//						Schema elmSchema = Schema.create(Schema.Type.DOUBLE);
+//						Schema fieldSchema = Schema.createArray(elmSchema);
+//						fieldSchema.addProp("specific", TypeClass.COORDINATE.name());
+//						colSchema = Schema.createUnion(fieldSchema, Schema.create(Type.NULL));
+//					}
+//					else if ( dtype.typeClass() == TypeClass.ENVELOPE ) {
+//						Schema elmSchema = Schema.create(Schema.Type.DOUBLE);
+//						Schema fieldSchema = Schema.createArray(elmSchema);
+//						fieldSchema.addProp("specific", TypeClass.ENVELOPE.name());
+//						colSchema = Schema.createUnion(fieldSchema, Schema.create(Type.NULL));
+//					}
+//					else {
+						throw new IllegalArgumentException("unsupported field type for avro: column=" + col);
+//					}
 				}
 				
 				fields.add(new Field(col.name(), colSchema));
@@ -93,6 +110,7 @@ public final class AvroUtils {
 			schema = schema.getTypes().get(0);
 		}
 		
+		String specific;
 		switch ( schema.getType() ) {
 			case STRING:
 				return DataType.STRING;
@@ -134,7 +152,7 @@ public final class AvroUtils {
 			case FLOAT:
 				return DataType.FLOAT;
 			case BYTES:
-				String specific = schema.getProp("specific");
+				specific = schema.getProp("specific");
 				if ( specific == null ) {
 					return DataType.BINARY;
 				};
@@ -144,7 +162,16 @@ public final class AvroUtils {
 					return gtype.duplicate(srid);
 				}
 				throw new IllegalArgumentException("unexpected binary type: specific=" + specific);
-				
+			case ARRAY:
+				specific = schema.getProp("specific");
+				switch ( TypeClass.valueOf(specific) ) {
+					case ENVELOPE:
+						return DataType.ENVELOPE;
+					case COORDINATE:
+						return DataType.COORDINATE;
+					default:
+						throw new IllegalArgumentException("unexpected array-field type: " + schema);
+				}
 			default:
 				throw new IllegalArgumentException("unexpected field type: " + schema);
 		}
@@ -198,17 +225,34 @@ public final class AvroUtils {
 				case DOUBLE:
 				case FLOAT:
 				case LONG:
-				case BINARY:
 				case BOOLEAN:
 					return value;
+				case BINARY:
+					if ( value instanceof byte[] ) {
+						return ByteBuffer.wrap((byte[])value);
+					}
+					else if ( value instanceof ByteBuffer) {
+						return value;
+					}
+					throw new IllegalArgumentException("illegal value for avro binary type: value=" + value.getClass());
 				case SHORT:
 					return ((Short)value).intValue();
 				case BYTE:
 					return ((Byte)value).intValue();
 				case ENVELOPE:
-					throw new AssertionError();
+					Envelope envl = (Envelope)value;
+					GenericData.Array<Double> envlArray = new GenericData.Array<Double>(4, SCHEMA_ENVELOPE);
+					envlArray.add(envl.getMinX());
+					envlArray.add(envl.getMaxX());
+					envlArray.add(envl.getMinY());
+					envlArray.add(envl.getMaxY());
+					return envlArray;
 				case COORDINATE:
-					throw new AssertionError();
+					Coordinate coord = (Coordinate)value;
+					GenericData.Array<Double> coordArray = new GenericData.Array<Double>(2, SCHEMA_COORDINATE);
+					coordArray.add(coord.x);
+					coordArray.add(coord.y);
+					return coordArray;
 				case DATETIME:
 					return LocalDateTimes.toEpochMillis(DataUtils.asDatetime(value));
 				default: 
@@ -220,7 +264,7 @@ public final class AvroUtils {
 		}
 	}
 	
-	static Object fromAvroValue(DataType type, Object value) {
+	public static Object fromAvroValue(DataType type, Object value) {
 		if ( value == null ) {
 			return null;
 		}
@@ -245,9 +289,11 @@ public final class AvroUtils {
 				case BYTE:
 					return (byte)value;
 				case ENVELOPE:
-					throw new AssertionError();
+					GenericArray<Double> envlArr = (GenericArray<Double>)value;
+					return new Envelope(envlArr.get(0), envlArr.get(1), envlArr.get(2), envlArr.get(3));
 				case COORDINATE:
-					throw new AssertionError();
+					GenericArray<Double> coordArr = (GenericArray<Double>)value;
+					return new Coordinate(coordArr.get(0), coordArr.get(1));
 				case DATETIME:
 					return LocalDateTimes.fromEpochMillis((Long)value);
 				default: 
@@ -295,6 +341,8 @@ public final class AvroUtils {
 	}
 	
 	private static final Map<TypeClass, Schema> PRIMITIVES = Maps.newHashMap();
+	private static final Schema SCHEMA_ENVELOPE;
+	private static final Schema SCHEMA_COORDINATE;
 	static {
 		PRIMITIVES.put(TypeClass.STRING, 
 						Schema.createUnion(Schema.create(Type.STRING), Schema.create(Type.NULL)));
@@ -310,6 +358,14 @@ public final class AvroUtils {
 		PRIMITIVES.put(TypeClass.DATETIME, createNullableFieldSchema(Type.LONG, TypeClass.DATETIME.name()));
 		PRIMITIVES.put(TypeClass.TIME, createNullableFieldSchema(Type.LONG, TypeClass.TIME.name()));
 		PRIMITIVES.put(TypeClass.DATE, createNullableFieldSchema(Type.LONG, TypeClass.DATE.name()));
+		
+		SCHEMA_COORDINATE = Schema.createArray(Schema.create(Schema.Type.DOUBLE));
+		SCHEMA_COORDINATE.addProp("specific", TypeClass.COORDINATE.name());
+		PRIMITIVES.put(TypeClass.COORDINATE, Schema.createUnion(SCHEMA_COORDINATE, Schema.create(Type.NULL)));
+		
+		SCHEMA_ENVELOPE = Schema.createArray(Schema.create(Schema.Type.DOUBLE));
+		SCHEMA_ENVELOPE.addProp("specific", TypeClass.ENVELOPE.name());
+		PRIMITIVES.put(TypeClass.ENVELOPE, Schema.createUnion(SCHEMA_ENVELOPE, Schema.create(Type.NULL)));
 	}
 	
 	private static final int DEFAULT_PIPE_SIZE = 128 * 1024;

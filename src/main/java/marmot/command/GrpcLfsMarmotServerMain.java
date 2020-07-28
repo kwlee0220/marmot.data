@@ -1,8 +1,5 @@
 package marmot.command;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import marmot.MarmotLfsServer;
@@ -21,8 +18,6 @@ import utils.NetUtils;
 			optionListHeading = "Options:%n",
 			description="create a remote HDFS DataSetServer (using gRPC)")
 public class GrpcLfsMarmotServerMain extends MarmotLocalFsCommand {
-	private final static Logger s_logger = LoggerFactory.getLogger(GrpcLfsMarmotServerMain.class);
-	
 	private static final int DEFAULT_MARMOT_PORT = 15685;
 	
 	@Option(names={"-port"}, paramLabel="number", required=false,
@@ -51,6 +46,9 @@ public class GrpcLfsMarmotServerMain extends MarmotLocalFsCommand {
 		server.start();
 
 		if ( m_verbose ) {
+			System.out.println("use DataSerServer: " + marmot.getDataSetServer());
+			System.out.println("use FileServer: " + marmot.getFileServer());
+			
 			String host = NetUtils.getLocalHostAddress();
 			System.out.printf("started: GrpcHdfsMarmotServer[host=%s, port=%d]%n", host, port);
 		}

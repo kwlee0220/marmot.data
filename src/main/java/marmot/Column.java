@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import marmot.type.DataType;
-import marmot.type.GeometryDataType;
 import utils.Utilities;
 
 /**

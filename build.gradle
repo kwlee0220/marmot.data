@@ -63,9 +63,10 @@ ext {
 	avro_version = '1.9.2'
 	snappy_java_version = '1.1.7.5'
 	antlr4_version = '4.7'
+	h2_version = '1.4.200'
 	postgis_jdbc_version = '2.2.1'
-	grpc_version = '1.23.0'
 	protobuf_version = '3.9.1'
+	grpc_version = '1.23.0'
 	commons_io_version = '2.6'
 	commons_csv_version = '1.5'
 	junit_version = '4.12'
@@ -89,6 +90,9 @@ dependencies {
 	
 	// ANTLR
 	implementation "org.antlr:antlr4-runtime:${antlr4_version}"
+	
+	// H2DB
+	implementation "com.h2database:h2:${h2_version}"
 	
 	// PostSQL
 //	compile "org.postgresql:postgresql:${postgresql_version}"

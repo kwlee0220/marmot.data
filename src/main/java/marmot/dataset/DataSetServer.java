@@ -1,6 +1,7 @@
 package marmot.dataset;
 
 import java.util.List;
+import java.util.Set;
 
 import marmot.RecordStream;
 
@@ -37,8 +38,9 @@ public interface DataSetServer {
 	public List<DataSet> getDataSetAll();
 	
 	public DataSet createDataSet(DataSetInfo dsInfo, boolean force) throws DataSetExistsException;
-	public default DataSet createDataSet(String dsId, RecordStream stream, boolean force) throws DataSetExistsException {
-		DataSetInfo info = new DataSetInfo(dsId, stream.getRecordSchema());
+	public default DataSet createDataSet(String dsId, DataSetType type, RecordStream stream, boolean force)
+		throws DataSetExistsException {
+		DataSetInfo info = new DataSetInfo(dsId, type, stream.getRecordSchema());
 		DataSet ds = createDataSet(info, force);
 		ds.write(stream);
 		
@@ -80,7 +82,7 @@ public interface DataSetServer {
 	 * 
 	 * @return	폴더 이름 리스트.
 	 */
-	public List<String> getDirAll();
+	public Set<String> getDirAll();
 	
 	/**
 	 * 주어진 이름의 폴더에 등록된 모든 하위 폴더 이름을 반환한다.
@@ -93,7 +95,7 @@ public interface DataSetServer {
 	 * @param recursive	하위 폴더 포함 여부.
 	 * @return	폴더 이름 리스트.
 	 */
-	public List<String> getSubDirAll(String folder, boolean recursive);
+	public Set<String> getSubDirAll(String folder, boolean recursive);
 	
 	/**
 	 * 주어진 이름의 폴더의 상위 폴더 이름을 반환한다.
