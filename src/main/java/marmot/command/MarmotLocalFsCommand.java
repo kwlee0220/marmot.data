@@ -43,6 +43,9 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
+	
+	@Option(names={"-h", "--home"}, paramLabel="path", description={"Marmot home directory"})
+	@Nullable private File m_homeDir = null;
 
 	@Option(names={"--root"}, paramLabel="path", description={"Dataset store root directory"})
 	@Nullable private File m_rootDir = DATASET_STORE_ROOT;
@@ -63,6 +66,17 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	@SuppressWarnings("deprecation")
 	public static final void run(MarmotLocalFsCommand cmd, String... args) throws Exception {
 		new CommandLine(cmd).parseWithHandler(new RunLast(), System.err, args);
+	}
+	
+	public File getHomeDir() {
+		if ( m_homeDir != null ) {
+			return m_homeDir;
+		}
+		else {
+			return FOption.ofNullable(System.getenv(ENVVAR_HOME))
+							.map(File::new)
+							.getOrElse(Utilities.getCurrentWorkingDir());
+		}
 	}
 	
 	@Override
@@ -95,9 +109,7 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 
 	@Override
 	public void configureLog4j() throws IOException {
-		String homeDir = FOption.ofNullable(System.getenv(ENVVAR_HOME))
-								.getOrElse(() -> System.getProperty("user.dir"));
-		File propsFile = new File(homeDir, "log4j.properties");
+		File propsFile = new File(getHomeDir(), "log4j.properties");
 		if ( m_verbose ) {
 			System.out.printf("use log4j.properties: file=%s%n", propsFile);
 		}

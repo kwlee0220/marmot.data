@@ -11,6 +11,7 @@ import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 
 import marmot.Record;
+import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordStreamException;
 import marmot.RecordWriter;
@@ -22,15 +23,22 @@ import utils.io.IOUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class AvroBinaryRecordWriter implements RecordWriter {
+	private final RecordSchema m_schema;
 	private final Schema m_avroSchema;
 	private final OutputStream m_os;
 	
-	public AvroBinaryRecordWriter(Schema avroSchema, OutputStream os) {
+	public AvroBinaryRecordWriter(RecordSchema schema, Schema avroSchema, OutputStream os) {
 		Utilities.checkNotNullArgument(avroSchema);
 		Utilities.checkNotNullArgument(os);
-		
+
+		m_schema = schema;
 		m_avroSchema = avroSchema;
 		m_os = os;
+	}
+
+	@Override
+	public RecordSchema getRecordSchema() {
+		return m_schema;
 	}
 
 	@Override
@@ -67,7 +75,7 @@ public class AvroBinaryRecordWriter implements RecordWriter {
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			AvroBinaryRecordWriter ser = new AvroBinaryRecordWriter(avroSchema, baos);
+			AvroBinaryRecordWriter ser = new AvroBinaryRecordWriter(stream.getRecordSchema(), avroSchema, baos);
 			ser.write(stream);
 		}
 		finally {

@@ -30,12 +30,19 @@ public class JdbcDataSetWriter implements RecordWriter {
 	private final String m_tblName;
 	private final JdbcProcessor m_jdbc;
 	private final JdbcRecordAdaptor m_adaptor;
+	private final RecordSchema m_schema;
 	private int m_batchSize = DEFAULT_BATCH_SIZE;
 	
-	public JdbcDataSetWriter(JdbcRecordAdaptor adaptor, String tblName) {
+	public JdbcDataSetWriter(JdbcRecordAdaptor adaptor, String tblName, RecordSchema schema) {
 		m_tblName = tblName;
 		m_jdbc = adaptor.getJdbcProcessor();
 		m_adaptor = adaptor;
+		m_schema = schema;
+	}
+
+	@Override
+	public RecordSchema getRecordSchema() {
+		return m_schema;
 	}
 	
 	public JdbcDataSetWriter setBatchSize(int size) {

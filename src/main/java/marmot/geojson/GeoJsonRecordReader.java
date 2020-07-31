@@ -25,7 +25,6 @@ import marmot.shp.ShapefileDataSets;
 import marmot.stream.AbstractRecordStream;
 import marmot.stream.MultiSourcesRecordStream;
 import marmot.type.GeometryDataType;
-import utils.func.Try;
 import utils.geo.util.CRSUtils;
 import utils.io.FileUtils;
 import utils.stream.FStream;
@@ -94,7 +93,7 @@ public class GeoJsonRecordReader implements RecordReader {
         BufferedReader reader = Files.newBufferedReader(file.toPath(), charset);
 		FeatureIterator<SimpleFeature> iter = fjson.streamFeatureCollection(reader);
 		RecordStream strm = ShapefileDataSets.toRecordStream(iter)
-											.onClose(() -> Try.run(reader::close))
+											.onClose(reader::close)
 											.project("geometry as the_geom, *-{geometry}");
 		if ( srid != null ) {
 			strm = new GeoJSoNStream(strm, srid);

@@ -19,12 +19,26 @@ import marmot.RecordSchema;
  */
 public class AvroFileRecordWriter extends AvroRecordWriter {
 	private static final Logger s_logger = LoggerFactory.getLogger(AvroFileRecordWriter.class);
+
 	private final File m_file;
+	private final RecordSchema m_schema;
+	private final Schema m_avroSchema;
 	
-	public AvroFileRecordWriter(File file) {
+	public AvroFileRecordWriter(File file, RecordSchema schema, Schema avroSchema) {
 		m_file = file;
+		m_schema = schema;
+		m_avroSchema = avroSchema;
 		
 		setLogger(s_logger);
+	}
+	
+	public AvroFileRecordWriter(File file, RecordSchema schema) {
+		this(file, schema, AvroUtils.toSchema(schema));
+	}
+
+	@Override
+	public RecordSchema getRecordSchema() {
+		return m_schema;
 	}
 	
 	public File getFile() {
@@ -37,15 +51,15 @@ public class AvroFileRecordWriter extends AvroRecordWriter {
 	}
 
 	@Override
-	protected DataFileWriter<GenericRecord> getFileWriter(RecordSchema schema, Schema avroSchema) throws IOException {
+	protected DataFileWriter<GenericRecord> getFileWriter() throws IOException {
 		FileUtils.forceMkdirParent(m_file);
 		
-		GenericDatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(avroSchema);
+		GenericDatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(m_avroSchema);
 		DataFileWriter<GenericRecord> writer = new DataFileWriter<>(datumWriter);
-		writer.setMeta("marmot_schema", schema.toString());
+		writer.setMeta("marmot_schema", m_schema.toString());
 		getSyncInterval().transform(writer, DataFileWriter::setSyncInterval);
 		getCodec().transform(writer, DataFileWriter::setCodec);
-		writer.create(avroSchema, m_file);
+		writer.create(m_avroSchema, m_file);
 		
 		return writer;
 	}

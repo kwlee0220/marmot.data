@@ -23,12 +23,12 @@ import marmot.type.DataType;
 public abstract class SerializingRecordWriter implements RecordWriter {
 	protected abstract ObjectOutputStream getOutputStream(RecordSchema schema) throws IOException;
 	
-	public static FileWriter from(File file) {
-		return new FileWriter(file);
+	public static FileWriter from(File file, RecordSchema schema) {
+		return new FileWriter(file, schema);
 	}
 	
-	public static BytesWriter fromBytes() {
-		return new BytesWriter();
+	public static BytesWriter fromBytes(RecordSchema schema) {
+		return new BytesWriter(schema);
 	}
 
 	@Override
@@ -54,10 +54,17 @@ public abstract class SerializingRecordWriter implements RecordWriter {
 	}
 	
 	public static class FileWriter extends SerializingRecordWriter {
+		private final RecordSchema m_schema;
 		private final File m_file;
 		
-		private FileWriter(File file) {
+		private FileWriter(File file, RecordSchema schema) {
 			m_file = file;
+			m_schema = schema;
+		}
+
+		@Override
+		public RecordSchema getRecordSchema() {
+			return m_schema;
 		}
 		
 		public File getFile() {
@@ -75,9 +82,16 @@ public abstract class SerializingRecordWriter implements RecordWriter {
 	}
 	
 	public static class BytesWriter extends SerializingRecordWriter {
+		private final RecordSchema m_schema;
 		@Nullable private byte[] m_bytes;
 		
-		private BytesWriter() {
+		private BytesWriter(RecordSchema schema) {
+			m_schema = schema;
+		}
+
+		@Override
+		public RecordSchema getRecordSchema() {
+			return m_schema;
 		}
 		
 		public byte[] getBytes() {

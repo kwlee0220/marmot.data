@@ -3,6 +3,8 @@ package marmot.stream;
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStream;
+import utils.func.CheckedRunnable;
+import utils.func.Try;
 
 /**
  * 
@@ -10,9 +12,9 @@ import marmot.RecordStream;
  */
 public class CloserAttachedRecordStream extends AbstractRecordStream {
 	private final RecordStream m_input;
-	private final Runnable m_closer;
+	private final CheckedRunnable m_closer;
 	
-	public CloserAttachedRecordStream(RecordStream iter, Runnable closer) {
+	public CloserAttachedRecordStream(RecordStream iter, CheckedRunnable closer) {
 		m_input = iter;
 		m_closer = closer;
 	}
@@ -22,7 +24,7 @@ public class CloserAttachedRecordStream extends AbstractRecordStream {
 		m_input.close();
 		
 		synchronized ( this ) {
-			m_closer.run();
+			Try.run(m_closer::run);
 		}
 	}
 

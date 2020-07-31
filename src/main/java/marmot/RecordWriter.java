@@ -5,6 +5,8 @@ package marmot;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface RecordWriter {
+	public RecordSchema getRecordSchema();
+	
 	/**
 	 * 레코드 세트에 포함된 모든 레코드를 저장한다.
 	 * 
@@ -12,4 +14,8 @@ public interface RecordWriter {
 	 * @return	저장된 레코드의 갯수.
 	 */
 	public long write(RecordStream stream);
+	
+	public default RecordWriteSession openWriteSession() {
+		return new RecordWriteSession(this);
+	}
 }

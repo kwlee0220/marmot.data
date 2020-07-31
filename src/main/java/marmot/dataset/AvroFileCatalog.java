@@ -251,7 +251,7 @@ public class AvroFileCatalog implements Catalog {
 	}
 	
 	public static void createCatalog(File catalogFile) {
-		AvroFileRecordWriter writer = new AvroFileRecordWriter(catalogFile);
+		AvroFileRecordWriter writer = new AvroFileRecordWriter(catalogFile, DataSetInfo.SCHEMA);
 		writer.write(RecordStream.empty(DataSetInfo.SCHEMA));
 	}
 	
@@ -260,7 +260,7 @@ public class AvroFileCatalog implements Catalog {
 	}
 	
 	private void save() {
-		RecordWriter writer = new AvroFileRecordWriter(m_catalogFile);
+		RecordWriter writer = new AvroFileRecordWriter(m_catalogFile, DataSetInfo.SCHEMA);
 		RecordStream strm = RecordStream.from(DataSetInfo.SCHEMA, FStream.from(m_byIdMap.values())
 																		.map(DataSetInfo::toRecord));
 		writer.write(strm);

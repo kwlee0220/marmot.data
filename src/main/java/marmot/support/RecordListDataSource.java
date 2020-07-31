@@ -51,6 +51,11 @@ public class RecordListDataSource {
 			m_schema = schema;
 			m_records = Lists.newArrayList();
 		}
+
+		@Override
+		public RecordSchema getRecordSchema() {
+			return m_schema;
+		}
 		
 		public List<Record> getRecordList() {
 			if ( m_records == null ) {

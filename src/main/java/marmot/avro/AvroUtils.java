@@ -373,7 +373,7 @@ public final class AvroUtils {
 		Tuple<PipedOutputStream,PipedInputStream> pipe = IOUtils.pipe(DEFAULT_PIPE_SIZE);
 		CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
 			try ( OutputStream os = pipe._1 ) {
-				new AvroBinaryRecordWriter(avroSchema, os).write(stream);
+				new AvroBinaryRecordWriter(stream.getRecordSchema(), avroSchema, os).write(stream);
 			}
 			catch ( Exception e ) {
 				Throwables.sneakyThrow(e);

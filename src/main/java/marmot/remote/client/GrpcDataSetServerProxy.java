@@ -213,7 +213,7 @@ public class GrpcDataSetServerProxy implements DataSetServer {
 			suos.setOutgoingChannel(channel);
 
 			Schema avroSchema = AvroUtils.toSchema(stream.getRecordSchema());
-			AvroBinaryRecordWriter ser = new AvroBinaryRecordWriter(avroSchema, suos);
+			AvroBinaryRecordWriter ser = new AvroBinaryRecordWriter(stream.getRecordSchema(), avroSchema, suos);
 			ser.write(stream);
 			suos.close();
 			

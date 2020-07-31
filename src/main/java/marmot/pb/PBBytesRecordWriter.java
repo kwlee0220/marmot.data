@@ -14,9 +14,16 @@ import marmot.RecordSchema;
  * @author Kang-Woo Lee (ETRI)
  */
 public class PBBytesRecordWriter extends PBRecordWriter {
+	private final RecordSchema m_schema;
 	private byte[] m_bytes;
 	
-	PBBytesRecordWriter() {
+	PBBytesRecordWriter(RecordSchema schema) {
+		m_schema = schema;
+	}
+
+	@Override
+	public RecordSchema getRecordSchema() {
+		return m_schema;
 	}
 	
 	public byte[] getBytes() {

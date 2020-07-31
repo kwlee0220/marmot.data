@@ -13,6 +13,7 @@ import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
+import marmot.RecordSchema;
 import marmot.RecordStream;
 import marmot.RecordWriter;
 import marmot.dataset.DataSetException;
@@ -23,6 +24,7 @@ import utils.func.Try;
  * @author Kang-Woo Lee (ETRI)
  */
 public class ShapefileWriter implements RecordWriter {
+	private final RecordSchema m_schema;
 	private final File m_outputDir;
 	private final String m_srid;
 	private final Charset m_charset;
@@ -31,14 +33,20 @@ public class ShapefileWriter implements RecordWriter {
 	private long m_maxDbfSize = -1;
 	private boolean m_force = false;
 	
-	public static ShapefileWriter into(File outputDir, String srid, Charset charset) {
-		return new ShapefileWriter(outputDir, srid, charset);
+	public static ShapefileWriter get(RecordSchema schema, File outputDir, String srid, Charset charset) {
+		return new ShapefileWriter(schema, outputDir, srid, charset);
 	}
 	
-	private ShapefileWriter(File outputDir, String srid, Charset charset) {
+	private ShapefileWriter(RecordSchema schema, File outputDir, String srid, Charset charset) {
+		m_schema = schema;
 		m_outputDir = outputDir;
 		m_srid = srid;
 		m_charset = charset;
+	}
+
+	@Override
+	public RecordSchema getRecordSchema() {
+		return m_schema;
 	}
 	
 	public ShapefileWriter setTypeName(String sftName) {

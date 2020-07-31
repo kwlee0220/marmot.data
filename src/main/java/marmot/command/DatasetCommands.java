@@ -615,7 +615,8 @@ public class DatasetCommands {
 			Charset charset = m_shpParams.charset();
 			
 			RecordReader input = m_shpParams.shpSrid().map(ds::transformSrid).getOrElse(ds);
-			ShapefileWriter writer = ShapefileWriter.into(m_output, srid, charset).setForce(m_force);
+			ShapefileWriter writer = ShapefileWriter.get(input.getRecordSchema(), m_output, srid, charset)
+													.setForce(m_force);
 			writer.write(input.read());
 		}
 	}

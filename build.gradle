@@ -153,6 +153,19 @@ publishing {
 	}
 }
 
+ext.distDir = "${archivesBaseName}.dist"
+task distributeBinary(type:Copy) {
+	dependsOn assemble
+	into "${distDir}"
+	from ("${projectDir}") {
+		include 'bin/**'
+		include 'lib/**'
+		include 'log4j.properties'
+		include '.gitignore'
+	}
+	from "${buildDir}/libs/${archivesBaseName}-${version}-javadoc.jar"
+}
+
 apply plugin: 'eclipse'
 eclipse {
 	classpath {

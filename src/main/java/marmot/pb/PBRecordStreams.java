@@ -28,8 +28,8 @@ public class PBRecordStreams {
 		throw new AssertionError("Should not be called here: class=" + getClass());
 	}
 	
-	public static PBFileRecordWriter writer(File file) {
-		return new PBFileRecordWriter(file);
+	public static PBFileRecordWriter writer(File file, RecordSchema schema) {
+		return new PBFileRecordWriter(file, schema);
 	}
 	
 	private static final int DEFAULT_PIPE_SIZE = 64 * 1024;

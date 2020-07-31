@@ -14,9 +14,16 @@ import utils.grpc.PBUtils;
  */
 public class PBFileRecordWriter extends PBRecordWriter {
 	private final File m_file;
+	private final RecordSchema m_schema;
 	
-	public PBFileRecordWriter(File file) {
+	public PBFileRecordWriter(File file, RecordSchema schema) {
 		m_file = file;
+		m_schema = schema;
+	}
+
+	@Override
+	public RecordSchema getRecordSchema() {
+		return m_schema;
 	}
 	
 	public File getFile() {

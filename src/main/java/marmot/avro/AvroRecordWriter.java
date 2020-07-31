@@ -39,11 +39,10 @@ public abstract class AvroRecordWriter implements RecordWriter, LoggerSettable {
 	@Nullable private CodecFactory m_codec = CODEC_FACT;
 	private Logger m_logger = s_logger;
 	
-	protected abstract DataFileWriter<GenericRecord> getFileWriter(RecordSchema schema, Schema avroSchema)
-		throws IOException;
+	protected abstract DataFileWriter<GenericRecord> getFileWriter() throws IOException;
 	
-	public static AvroRecordWriter into(File file) {
-		return new AvroFileRecordWriter(file);
+	public static AvroRecordWriter get(File file, RecordSchema schema, Schema avroSchema) {
+		return new AvroFileRecordWriter(file, schema, avroSchema);
 	}
 	
 	public FOption<Integer> getSyncInterval() {
@@ -84,7 +83,7 @@ public abstract class AvroRecordWriter implements RecordWriter, LoggerSettable {
 		Schema avroSchema = AvroUtils.toSchema(schema);
 		
 		StopWatch watch = StopWatch.start();
-		try ( DataFileWriter<GenericRecord> writer = getFileWriter(schema, avroSchema) ) {
+		try ( DataFileWriter<GenericRecord> writer = getFileWriter() ) {
 			writer.setFlushOnEveryBlock(false);
 			
 			long count = 0;

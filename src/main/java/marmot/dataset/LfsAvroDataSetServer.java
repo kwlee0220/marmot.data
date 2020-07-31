@@ -166,7 +166,7 @@ public class LfsAvroDataSetServer extends AbstractDataSetServer {
 			File partFile = new File(m_start, UUID.randomUUID().toString() + ".avro");
 			
 			StatsCollectingRecordStream collector = stream.collectStats();
-			long cnt = new AvroFileRecordWriter(partFile).write(collector);
+			long cnt = new AvroFileRecordWriter(partFile, stream.getRecordSchema()).write(collector);
 			
 			m_info.setRecordCount(collector.getRecordCount());
 			m_info.setBounds(collector.getBounds());

@@ -27,6 +27,7 @@ import utils.LoggerSettable;
 import utils.Throwables;
 import utils.Utilities;
 import utils.func.CheckedConsumerX;
+import utils.func.CheckedRunnable;
 import utils.func.FOption;
 import utils.stream.FStream;
 
@@ -74,11 +75,16 @@ public interface RecordStream extends AutoCloseable {
 		return new EmptyRecordStream(schema);
 	}
 	
-	public default RecordStream onClose(Runnable closer) {
+	public default RecordStream onClose(CheckedRunnable closer) {
 		Utilities.checkNotNullArgument(closer, "Closer");
 		
 		return new CloserAttachedRecordStream(this, closer);
 	}
+//	public default RecordStream onClose(AutoCloseable closer) {
+//		Utilities.checkNotNullArgument(closer, "Closer");
+//		
+//		return new CloserAttachedRecordStream(this, Unchecked.ignore(closer::close));
+//	}
 	
 	public default RecordStream take(long count) {
 		return new TakenReader.ResultStream(this, count);
