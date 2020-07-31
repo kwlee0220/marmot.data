@@ -34,3 +34,4 @@ hs_err_pid*
 /bin/geocode.db/
 /bin/*.jar
 /**/*.swp
+/*.dist/
