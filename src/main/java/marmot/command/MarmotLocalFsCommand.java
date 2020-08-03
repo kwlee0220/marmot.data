@@ -44,10 +44,7 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 	
-	@Option(names={"-h", "--home"}, paramLabel="path", description={"Marmot home directory"})
 	@Nullable private File m_homeDir = null;
-
-	@Option(names={"--root"}, paramLabel="path", description={"Dataset store root directory"})
 	@Nullable private File m_rootDir = DATASET_STORE_ROOT;
 
 	@Option(names={"--catalog"}, paramLabel="jdbc_str", description={"JDBC String"})
@@ -78,10 +75,33 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 							.getOrElse(Utilities.getCurrentWorkingDir());
 		}
 	}
+
+	@Option(names={"-h", "--home"}, paramLabel="path", description={"Marmot home directory"})
+	public void setHomeDir(File file) {
+		try {
+			m_homeDir = file.getCanonicalFile();
+		}
+		catch ( IOException e ) {
+			throw new IllegalArgumentException("invalid home.dir=" + file, e);
+		}
+	}
+
+	@Option(names={"-r", "--root"}, paramLabel="path", description={"Dataset store root directory"})
+	public void setDataSetRoot(File file) {
+		try {
+			m_rootDir = file.getCanonicalFile();
+		}
+		catch ( IOException e ) {
+			throw new IllegalArgumentException("invalid dataset.root=" + file, e);
+		}
+	}
 	
 	@Override
 	public void run() {
 		try {
+			if ( m_verbose ) {
+				System.out.println("use home.dir=" + getHomeDir());
+			}
 			configureLog4j();
 			
 			MarmotLfsServer marmot = getInitialContext();

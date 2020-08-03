@@ -308,6 +308,11 @@ public class JdbcCatalog implements Catalog {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		return m_jdbc.toString();
+	}
+	
 	private boolean existsDirectoryInGuard(Connection conn, String id) throws SQLException {
 		try ( PreparedStatement pstmt = conn.prepareStatement(SQL_IS_FOLDER) ) {
 			pstmt.setString(1, id);
