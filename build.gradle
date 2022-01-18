@@ -33,11 +33,8 @@ sourceSets {
 }
 
 repositories {
-//	jcenter()
     mavenLocal()
-	maven {
-		url "http://repo.osgeo.org/repository/release/"
-	}
+	maven { url "https://repo.osgeo.org/repository/release/" }
     mavenCentral()
 }
 
@@ -58,8 +55,9 @@ protobuf {
 }
 
 ext {
-	geotools_version = '19.3'
-	jts_version = '1.14.0'
+	log4j_version = '1.2.17'
+	geotools_version = '26.1'
+	jts_version = '1.17.1'
 	avro_version = '1.9.2'
 	snappy_java_version = '1.1.7.5'
 	antlr4_version = '4.7'
@@ -67,8 +65,9 @@ ext {
 	postgis_jdbc_version = '2.2.1'
 	protobuf_version = '3.9.1'
 	grpc_version = '1.23.0'
-	commons_io_version = '2.6'
-	commons_csv_version = '1.5'
+	commons_io_version = '2.11.0'
+	commons_csv_version = '1.9.0'
+	mvel2_version = '2.4.14.Final'
 	junit_version = '4.12'
 	mockito_version = '3.2.4'
 	hamcrest_version = '1.3'
@@ -76,13 +75,16 @@ ext {
 
 dependencies {
 	compile project(":utils")
+	compile project(":utilsx")
 	compile project(":utils.geo")
+	
+	implementation "log4j:log4j:${log4j_version}"
 	
 	// GeoTools & JTS
 	api	"org.geotools:gt-epsg-hsql:${geotools_version}"
 	api "org.geotools:gt-shapefile:${geotools_version}"
 	api "org.geotools:gt-geojson:${geotools_version}"
-	api "com.vividsolutions:jts-core:${jts_version}"
+	api "org.locationtech.jts:jts-core:${jts_version}"
 	
 	// Avro
 	compile "org.apache.avro:avro:${avro_version}"
@@ -107,6 +109,8 @@ dependencies {
 	api "io.grpc:grpc-protobuf:${grpc_version}"
 	api "io.grpc:grpc-stub:${grpc_version}"
 	api "com.google.protobuf:protobuf-java-util:${protobuf_version}"
+	
+	implementation "org.mvel:mvel2:${mvel2_version}"
 	
 	testImplementation "junit:junit:${junit_version}"
 	testImplementation "org.mockito:mockito-core:${mockito_version}"

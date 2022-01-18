@@ -1,6 +1,6 @@
 package marmot.optor.geo;
 
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 
 import marmot.Column;
 import marmot.Record;

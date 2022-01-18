@@ -1,8 +1,7 @@
 package marmot.optor.geo;
 
+import org.locationtech.jts.geom.Geometry;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import com.vividsolutions.jts.geom.Geometry;
 
 import marmot.Column;
 import marmot.RecordReader;

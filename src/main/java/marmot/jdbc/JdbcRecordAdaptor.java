@@ -15,8 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.locationtech.jts.geom.Geometry;
+
 import com.google.common.collect.Maps;
-import com.vividsolutions.jts.geom.Geometry;
 
 import marmot.Column;
 import marmot.Record;

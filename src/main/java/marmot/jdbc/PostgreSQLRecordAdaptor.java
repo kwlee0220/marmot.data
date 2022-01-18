@@ -4,9 +4,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.locationtech.jts.geom.Geometry;
 import org.postgis.PGgeometry;
-
-import com.vividsolutions.jts.geom.Geometry;
 
 import marmot.Column;
 import marmot.RecordSchema;
