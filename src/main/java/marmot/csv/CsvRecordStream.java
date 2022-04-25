@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,6 @@ import marmot.type.DataType;
 import utils.StopWatch;
 import utils.Utilities;
 import utils.func.Try;
-import utils.io.FileUtils;
 import utils.stream.FStream;
 
 
@@ -75,7 +75,7 @@ public class CsvRecordStream extends AbstractRecordStream {
 		try {
 			@SuppressWarnings("resource")
 			InputStream src = new FileInputStream(file);
-			String ext = FileUtils.getExtension(file);
+			String ext = FilenameUtils.getExtension(file.getAbsolutePath());
 			switch ( ext ) {
 				case "csv":
 					break;
