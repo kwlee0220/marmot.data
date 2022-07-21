@@ -55,7 +55,6 @@ protobuf {
 }
 
 ext {
-	log4j_version = '1.2.17'
 	geotools_version = '26.1'
 	jts_version = '1.17.1'
 	avro_version = '1.9.2'
@@ -78,8 +77,6 @@ dependencies {
 	compile project(":utils")
 	compile project(":utilsx")
 	compile project(":utils.geo")
-	
-	implementation "log4j:log4j:${log4j_version}"
 	
 	// GeoTools & JTS
 	api	"org.geotools:gt-epsg-hsql:${geotools_version}"
