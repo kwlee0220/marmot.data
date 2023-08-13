@@ -2,14 +2,17 @@ package marmot.remote.client;
 
 import java.io.File;
 
-import marmot.file.FileServer;
-import marmot.file.UploadFiles;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+
 import utils.UsageHelp;
 import utils.func.CheckedConsumer;
 import utils.func.Funcs;
+
+import marmot.file.FileServer;
+import marmot.file.UploadFiles;
+
 
 /**
  * 
@@ -32,7 +35,7 @@ public class UploadFilesCommand implements CheckedConsumer<FileServer> {
 	@Override
 	public void accept(FileServer server) throws Exception {
 		UploadFiles upload = new UploadFiles(server, new File(m_srcPath), m_destPath);
-		Funcs.when(m_glob != null, () -> upload.glob(m_glob));
+		Funcs.runIfNotNull(m_glob, () -> upload.glob(m_glob));
 		upload.run();
 	}
 }

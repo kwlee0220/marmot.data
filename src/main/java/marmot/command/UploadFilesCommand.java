@@ -2,16 +2,19 @@ package marmot.command;
 
 import java.io.File;
 
-import marmot.MarmotRuntime;
-import marmot.file.FileServer;
-import marmot.file.UploadFiles;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+
 import utils.PicocliSubCommand;
 import utils.StopWatch;
 import utils.UnitUtils;
 import utils.func.Funcs;
+
+import marmot.MarmotRuntime;
+import marmot.file.FileServer;
+import marmot.file.UploadFiles;
+
 
 /**
  * 
@@ -39,7 +42,7 @@ public class UploadFilesCommand extends PicocliSubCommand<MarmotRuntime> {
 
 		FileServer server = marmot.getFileServer();
 		UploadFiles upload = new UploadFiles(server, new File(m_srcPath), m_destPath);
-		Funcs.when(m_glob != null, () -> upload.glob(m_glob));
+		Funcs.runIfNotNull(m_glob, () -> upload.glob(m_glob));
 		long nbytes = upload.run();
 		
 		long velo = Math.round(nbytes / watch.getElapsedInFloatingSeconds());
