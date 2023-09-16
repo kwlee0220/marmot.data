@@ -38,7 +38,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 
 	private static final long MAX_WAIT_TIMEOUT = StreamUploadSender.MAX_WAIT_TIMEOUT;
 	private static final int DEFAULT_CHUNK_SIZE = (int)UnitUtils.parseByteSize("64kb");
-	private static final long DEFAULT_STREAM_ACQUIRE_TIMEOUT = UnitUtils.parseDuration("10s");	// 10 seconds
+	private static final long DEFAULT_STREAM_ACQUIRE_TIMEOUT = UnitUtils.parseDurationMillis("10s");	// 10 seconds
 	
 	private final StreamObserver<DownMessage> m_channel;
 	private long m_streamAcquireTimeout = DEFAULT_STREAM_ACQUIRE_TIMEOUT;

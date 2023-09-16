@@ -31,7 +31,7 @@ import utils.grpc.stream.server.StreamUploadReceiver;
  */
 public class StreamUploadOutputStream extends OutputStream implements StreamObserver<DownMessage> {
 	private static final Logger s_logger = LoggerFactory.getLogger(StreamUploadOutputStream.class);
-	private static final long DEFAULT_CLOSE_TIMEOUT = UnitUtils.parseDuration("30s");		// 30s
+	private static final long DEFAULT_CLOSE_TIMEOUT = UnitUtils.parseDurationMillis("30s");		// 30s
 	private static final long MAX_WAIT_TIMEOUT = StreamUploadSender.MAX_WAIT_TIMEOUT;
 	private static final int CHUNK_SIZE = (int)UnitUtils.parseByteSize("256kb");
 
