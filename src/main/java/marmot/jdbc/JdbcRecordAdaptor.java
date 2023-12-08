@@ -13,11 +13,17 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.locationtech.jts.geom.Geometry;
 
 import com.google.common.collect.Maps;
+
+import utils.LocalDateTimes;
+import utils.LocalDates;
+import utils.LocalTimes;
+import utils.jdbc.JdbcProcessor;
+import utils.stream.FStream;
+import utils.stream.KVFStream;
 
 import marmot.Column;
 import marmot.Record;
@@ -26,12 +32,6 @@ import marmot.RecordStreamException;
 import marmot.type.DataType;
 import marmot.type.GeometryDataType;
 import marmot.type.PrimitiveDataType;
-import utils.LocalDateTimes;
-import utils.LocalDates;
-import utils.LocalTimes;
-import utils.jdbc.JdbcProcessor;
-import utils.stream.FStream;
-import utils.stream.KVFStream;
 
 
 /**
@@ -101,13 +101,7 @@ public abstract class JdbcRecordAdaptor {
 								.append(prmKeyStr)
 								.append(")")
 								.toString();
-
-		try {
-			m_jdbc.execute(stmt -> stmt.executeUpdate(sqlStr));
-		}
-		catch ( ExecutionException e ) {
-			throw (SQLException)e.getCause();
-		}
+		m_jdbc.executeQuery(sqlStr);
 	}
 	
 	public void deleteTable(String tblName) throws SQLException {

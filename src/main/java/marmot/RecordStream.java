@@ -9,7 +9,14 @@ import java.util.function.Consumer;
 
 import com.google.common.collect.Lists;
 
-import io.reactivex.Observable;
+import utils.LoggerSettable;
+import utils.Throwables;
+import utils.Utilities;
+import utils.func.CheckedConsumerX;
+import utils.func.CheckedRunnable;
+import utils.func.FOption;
+import utils.stream.FStream;
+
 import marmot.optor.ProjectedReader;
 import marmot.optor.TakenReader;
 import marmot.stream.AutoClosingRecordStream;
@@ -23,13 +30,8 @@ import marmot.stream.PeekableRecordStream;
 import marmot.stream.PipedRecordStream;
 import marmot.stream.PushBackableRecordStream;
 import marmot.stream.StatsCollectingRecordStream;
-import utils.LoggerSettable;
-import utils.Throwables;
-import utils.Utilities;
-import utils.func.CheckedConsumerX;
-import utils.func.CheckedRunnable;
-import utils.func.FOption;
-import utils.stream.FStream;
+
+import io.reactivex.rxjava3.core.Observable;
 
 /**
  * 
