@@ -162,7 +162,7 @@ public class RecordSchema implements Serializable  {
 	public RecordSchema project(FStream<String> keys) {
 		Utilities.checkNotNullArgument(keys, "name list is null");
 		
-		return keys.flatMapOption(this::findColumn)
+		return keys.flatMapFOption(this::findColumn)
 					.foldLeft(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 					.build();
 	}
