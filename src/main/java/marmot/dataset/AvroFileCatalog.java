@@ -13,16 +13,17 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
+import utils.func.FOption;
+import utils.func.KeyValue;
+import utils.stream.FStream;
+import utils.stream.KVFStream;
+
 import marmot.Record;
 import marmot.RecordReader;
 import marmot.RecordStream;
 import marmot.RecordWriter;
 import marmot.avro.AvroFileRecordReader;
 import marmot.avro.AvroFileRecordWriter;
-import utils.func.FOption;
-import utils.func.KeyValue;
-import utils.stream.FStream;
-import utils.stream.KVFStream;
 
 /**
  * 
@@ -62,7 +63,7 @@ public class AvroFileCatalog implements Catalog {
 	@Override
 	public List<DataSetInfo> getDataSetInfoAll() {
 		return FStream.from(m_byFolderMap.asMap())
-						.flatMapIterable(kv -> kv.value())
+						.flatMap(kv -> FStream.from(kv.value()))
 						.map(DataSetInfo::duplicate)
 						.toList();
 	}
@@ -75,7 +76,7 @@ public class AvroFileCatalog implements Catalog {
 				? strm.filterKey(folder -> folder.startsWith(prefix))
 				: strm.filterKey(folder -> folder.equals(prefix));
 		return strm.toValueStream()
-					.flatMapIterable(infos -> infos)
+					.flatMap(infos -> FStream.from(infos))
 					.toList();
 	}
 

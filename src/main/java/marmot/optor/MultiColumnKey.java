@@ -8,11 +8,12 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 
-import marmot.Column;
-import marmot.RecordSchema;
 import utils.CSV;
 import utils.Utilities;
 import utils.stream.FStream;
+
+import marmot.Column;
+import marmot.RecordSchema;
 
 
 /**
@@ -147,7 +148,7 @@ public final class MultiColumnKey implements Serializable {
 		Utilities.checkNotNullArguments(keys, "MultiColumnKey array is null");
 		
 		List<KeyColumn> keyCols = FStream.of(keys)
-										.flatMapIterable(k -> k.m_keyColumns)
+										.flatMap(k -> FStream.from(k.m_keyColumns))
 										.collectLeft(Lists.newArrayList(), (a,ks)->a.add(ks));
 		return new MultiColumnKey(keyCols);
 	}
