@@ -46,7 +46,7 @@ public class PBValueProtos {
 		return record.getRecordSchema()
 					.streamColumns()
 					.map(col -> toValueProto(col.type().typeClass(), record.get(col.ordinal())))
-					.foldLeft(RecordProto.newBuilder(), (b,v) -> b.addColumn(v))
+					.fold(RecordProto.newBuilder(), (b,v) -> b.addColumn(v))
 					.build();
 	}
 	

@@ -4,6 +4,8 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import utils.stream.FStream;
+
 import marmot.Column;
 import marmot.RecordSchema;
 import marmot.type.DataType;
@@ -16,7 +18,6 @@ import marmot.type.typeexpr.TypeExprParser;
 import marmot.type.typeexpr.TypeExprParser.ColumnTypeIdExprContext;
 import marmot.type.typeexpr.TypeExprParser.ColumnTypeNameExprContext;
 import marmot.type.typeexpr.TypeExprParser.SridExprContext;
-import utils.stream.FStream;
 
 /**
  * 
@@ -137,7 +138,7 @@ public class TypeParser {
 							.castSafely(ColumnTypeIdExprContext.class)
 							.map(this::visit)
 							.cast(Column.class)
-							.foldLeft(RecordSchema.builder(), (b,c) -> b.addColumn(c))
+							.fold(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 							.build();
 		}
 
@@ -199,7 +200,7 @@ public class TypeParser {
 							.castSafely(ColumnTypeNameExprContext.class)
 							.map(this::visit)
 							.cast(Column.class)
-							.foldLeft(RecordSchema.builder(), (b,c) -> b.addColumn(c))
+							.fold(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 							.build();
 		}
 

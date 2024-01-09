@@ -149,7 +149,7 @@ public final class MultiColumnKey implements Serializable {
 		
 		List<KeyColumn> keyCols = FStream.of(keys)
 										.flatMap(k -> FStream.from(k.m_keyColumns))
-										.collectLeft(Lists.newArrayList(), (a,ks)->a.add(ks));
+										.collect(Lists.newArrayList(), (a,ks)->a.add(ks));
 		return new MultiColumnKey(keyCols);
 	}
 	

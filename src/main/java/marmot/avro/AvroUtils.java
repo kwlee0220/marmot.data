@@ -28,6 +28,13 @@ import org.locationtech.jts.geom.Geometry;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import utils.LocalDateTimes;
+import utils.Throwables;
+import utils.Utilities;
+import utils.func.Tuple;
+import utils.io.IOUtils;
+import utils.stream.FStream;
+
 import marmot.Column;
 import marmot.Record;
 import marmot.RecordSchema;
@@ -37,12 +44,6 @@ import marmot.type.DataType;
 import marmot.type.GeometryDataType;
 import marmot.type.PrimitiveDataType;
 import marmot.type.TypeClass;
-import utils.LocalDateTimes;
-import utils.Throwables;
-import utils.Utilities;
-import utils.func.Tuple;
-import utils.io.IOUtils;
-import utils.stream.FStream;
 
 /**
  * 
@@ -101,7 +102,7 @@ public final class AvroUtils {
 	public static RecordSchema toRecordSchema(Schema schema) {
 		return FStream.from(schema.getFields())
 						.map(field -> new Column(field.name(), toColumnDataType(field.schema())))
-						.foldLeft(RecordSchema.builder(), (b,c) -> b.addColumn(c))
+						.fold(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 						.build();
 	}
 	

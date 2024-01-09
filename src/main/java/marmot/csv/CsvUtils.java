@@ -6,11 +6,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.CSV;
+import utils.stream.FStream;
+
 import marmot.Column;
 import marmot.RecordSchema;
 import marmot.type.DataType;
-import utils.CSV;
-import utils.stream.FStream;
 
 /**
  * 
@@ -30,7 +31,7 @@ public class CsvUtils {
 	public static RecordSchema buildRecordSchema(List<String> colSpecs) {
 		return FStream.from(colSpecs)
 						.map(CsvUtils::parseColumnSpec)
-						.foldLeft(RecordSchema.builder(), (b,c) -> b.addColumn(c))
+						.fold(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 						.build();
 	}
 	

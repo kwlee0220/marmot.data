@@ -83,7 +83,7 @@ public abstract class JdbcRecordAdaptor {
 		return KVFStream.from(jdbc.getColumns(tblName))
 						.mapValue((k,v) -> fromSqlType(v.type(), v.typeName()))
 						.map((k,v) -> new Column(k,v))
-						.foldLeft(RecordSchema.builder(), (b,c) -> b.addColumn(c))
+						.fold(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 						.build();
 	}
 	
