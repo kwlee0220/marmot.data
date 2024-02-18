@@ -1,19 +1,7 @@
-apply plugin: 'java-library'
-apply plugin: 'maven-publish'
-apply plugin: 'com.google.protobuf'
-apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'nebula-aggregate-javadocs'	// gradle aggregateJavadocs
-
-buildscript {
-	repositories {
-		mavenLocal()
-		jcenter()
-	}
-	dependencies {
-		classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.7'
-		classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
-		classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
-	}
+plugins {
+	id 'java-library'
+	id 'eclipse'
+	id 'com.google.protobuf' version '0.9.4'
 }
 
 group = 'etri'
@@ -21,6 +9,24 @@ version = '20.05.15'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.2"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.60.1'
+        }
+    }
+    generateProtoTasks {
+    	ofSourceSet('main').configureEach {
+    		plugins {
+            	grpc {}
+            }
+        }
+    }
+}
 
 sourceSets {
 	main {
@@ -34,27 +40,18 @@ sourceSets {
 
 repositories {
     mavenLocal()
-	maven { url "https://repo.osgeo.org/repository/release/" }
+	maven {
+		url "https://repo.osgeo.org/repository/release/"
+		allowInsecureProtocol = true
+	}
     mavenCentral()
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.5.1-1"
-    }
-    plugins {
-        grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.16.1'
-        }
-    }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc {}
-        }
-    }
-}
-
 ext {
+	javax_annotation_version = '1.3.2'
+	grpc_version = '1.60.1'
+	protobuf_version = '3.25.2'
+
 	geotools_version = '26.1'
 	jts_version = '1.17.1'
 	avro_version = '1.9.2'
@@ -62,21 +59,20 @@ ext {
 	antlr4_version = '4.7'
 	h2_version = '1.4.200'
 	postgis_jdbc_version = '2.2.1'
-	protobuf_version = '3.9.1'
-	grpc_version = '1.23.0'
 	commons_io_version = '2.11.0'
 	commons_csv_version = '1.9.0'
 	mvel2_version = '2.4.14.Final'
 	rxjava3_version = '3.1.8'
+
 	junit_version = '4.12'
 	mockito_version = '3.2.4'
 	hamcrest_version = '1.3'
 }
 
 dependencies {
-	compile project(":utils")
-	compile project(":utilsx")
-	compile project(":utils.geo")
+	implementation project(":utils")
+	implementation project(":utilsx")
+	implementation project(":utils.geo")
 	
 	// GeoTools & JTS
 	api	"org.geotools:gt-epsg-hsql:${geotools_version}"
@@ -85,7 +81,7 @@ dependencies {
 	api "org.locationtech.jts:jts-core:${jts_version}"
 	
 	// Avro
-	compile "org.apache.avro:avro:${avro_version}"
+	implementation "org.apache.avro:avro:${avro_version}"
 	implementation "org.xerial.snappy:snappy-java:${snappy_java_version}"
 	
 	// ANTLR
@@ -103,10 +99,11 @@ dependencies {
 	implementation "org.apache.commons:commons-csv:${commons_csv_version}"
 	
 	// grpc
-	api "io.grpc:grpc-netty-shaded:${grpc_version}"
-	api "io.grpc:grpc-protobuf:${grpc_version}"
-	api "io.grpc:grpc-stub:${grpc_version}"
-	api "com.google.protobuf:protobuf-java-util:${protobuf_version}"
+	implementation "io.grpc:grpc-netty-shaded:${grpc_version}"
+	implementation "io.grpc:grpc-stub:${grpc_version}"
+	implementation "io.grpc:grpc-protobuf:${grpc_version}"
+	implementation "com.google.protobuf:protobuf-java-util:${protobuf_version}"
+	implementation "javax.annotation:javax.annotation-api:${javax_annotation_version}"
 	
 	implementation "org.mvel:mvel2:${mvel2_version}"
 	implementation "io.reactivex.rxjava3:rxjava:${rxjava3_version}"
@@ -114,19 +111,6 @@ dependencies {
 	testImplementation "junit:junit:${junit_version}"
 	testImplementation "org.mockito:mockito-core:${mockito_version}"
 	testImplementation "org.hamcrest:hamcrest-all:${hamcrest_version}"
-}
-
-shadowJar {
-	classifier 'all'
-	
-	mergeServiceFiles()
-	
-	exclude 'META-INF/*.SF'
-	exclude 'META-INF/*.DSA'
-	exclude 'META-INF/*.RSA'
-	
-	relocate 'com.fasterxml', 'shadow.com.fasterxml'
-	relocate 'org.apache.http', "shadow.org.apache.http"	// 포도 업체때문에 conflict를 회피하려고
 }
 
 task sourceJar(type: Jar) {
@@ -141,67 +125,4 @@ task javadocJar(type: Jar) {
 artifacts {
 	archives sourceJar
 	archives javadocJar
-	archives shadowJar
-}
-
-publishing {
-	publications {
-		marmotData(MavenPublication) {
-			from components.java
-			
-			artifact sourceJar
-			artifact javadocJar
-			artifact shadowJar
-		}
-	}
-}
-
-ext.distDir = "${archivesBaseName}.dist"
-task distributeBinary(type:Copy) {
-	dependsOn assemble
-	into "${distDir}"
-	from ("${projectDir}") {
-		include 'bin/**'
-		include 'lib/**'
-		include '.gitignore'
-	}
-	from "${buildDir}/libs/${archivesBaseName}-${version}-javadoc.jar"
-}
-
-apply plugin: 'eclipse'
-eclipse {
-	classpath {
-		file {
-			withXml {
-				def node = it.asNode()
-				node.appendNode('classpathentry', [kind: 'output', path: 'classes'])
-			}
-			
-			whenMerged { cp ->
-				Map entryByPath = cp.entries.groupBy { entry -> entry.path }
-				entryByPath.each { key, values ->
-					if ( values.size() > 1 ) {
-            			def entry = values.first()
-            			if ( entry.kind == 'src' ) {
-            				entry.includes = []
-            				entry.excludes = []
-            			}
-            			int index = cp.entries.indexOf entry
-            			cp.entries.removeAll values
-            			cp.entries.add index, entry
-					}
-				}
-				cp.entries.each { entry ->
-					if ( entry.kind == 'src' && entry.hasProperty('output') ) {
-						if ( entry.path.startsWith("src/test/") ) {
-							entry.output = 'test_classes'
-						}
-						else {
-							entry.output = 'classes'
-						}
-					}
-				}
-			}
-		}
-	}
 }
