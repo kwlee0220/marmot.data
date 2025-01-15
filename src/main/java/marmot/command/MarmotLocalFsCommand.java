@@ -17,12 +17,13 @@ import com.google.common.collect.Maps;
 
 import utils.PicocliCommand;
 import utils.UsageHelp;
-import utils.Utilities;
 import utils.func.FOption;
+import utils.io.FileUtils;
 import utils.jdbc.JdbcProcessor;
 
 import marmot.MarmotLfsServer;
 import marmot.dataset.LfsAvroDataSetServer;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Mixin;
@@ -41,7 +42,7 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	private static final Logger s_logger = LoggerFactory.getLogger(MarmotLocalFsCommand.class);
 	private static final String ENVVAR_HOME = "MARMOT_HOME";
 	private static final String CATALOG_JDBC = "h2_local::0:sa::~/catalog";
-	private static final File DATASET_STORE_ROOT = new File(Utilities.getHomeDir(), "datasets"); 
+	private static final File DATASET_STORE_ROOT = new File(FileUtils.getUserHomeDir(), "datasets"); 
 	
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
@@ -74,7 +75,7 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 		else {
 			return FOption.ofNullable(System.getenv(ENVVAR_HOME))
 							.map(File::new)
-							.getOrElse(Utilities.getCurrentWorkingDir());
+							.getOrElse(FileUtils.getCurrentWorkingDirectory());
 		}
 	}
 

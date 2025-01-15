@@ -3,6 +3,8 @@ package marmot.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import utils.jdbc.JdbcProcessor;
+
 import marmot.Column;
 import marmot.DefaultRecord;
 import marmot.Record;
@@ -12,7 +14,6 @@ import marmot.RecordStream;
 import marmot.RecordStreamException;
 import marmot.dataset.DataSetException;
 import marmot.stream.AbstractRecordStream;
-import utils.jdbc.JdbcProcessor;
 
 
 /**
@@ -40,7 +41,7 @@ public class JdbcRecordReader implements RecordReader {
 	public RecordStream read() {
 		try {
 			JdbcProcessor jdbc = m_adaptor.getJdbcProcessor();
-			return new StreamImpl(jdbc.executeQuery(m_sql));
+			return new StreamImpl(jdbc.executeQuery(m_sql, true));
 		}
 		catch ( SQLException e ) {
 			throw new DataSetException("fails to execute query: " + m_sql + ", cause=" + e);

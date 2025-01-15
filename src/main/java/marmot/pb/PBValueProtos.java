@@ -10,6 +10,11 @@ import org.locationtech.jts.geom.Geometry;
 
 import com.google.protobuf.ByteString;
 
+import utils.LocalDateTimes;
+import utils.LocalDates;
+import utils.LocalTimes;
+import utils.func.Tuple;
+
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.proto.RecordProto;
@@ -17,11 +22,6 @@ import marmot.proto.TypeCodeProto;
 import marmot.proto.ValueProto;
 import marmot.type.GeometryDataType;
 import marmot.type.TypeClass;
-import utils.LocalDateTimes;
-import utils.LocalDates;
-import utils.LocalTimes;
-import utils.Utilities;
-import utils.func.Tuple;
 
 /**
  * 
@@ -165,7 +165,7 @@ public class PBValueProtos {
 			builder.setFloatValue((float)obj);
 		}
 		else if ( obj instanceof LocalDateTime ) {
-			builder.setDatetimeValue(Utilities.toUTCEpocMillis((LocalDateTime)obj));
+			builder.setDatetimeValue(LocalDateTimes.toEpochMillis((LocalDateTime)obj));
 		}
 		else if ( obj instanceof LocalDate ) {
 			builder.setDateValue(LocalDates.toEpochMillis((LocalDate)obj));

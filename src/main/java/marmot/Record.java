@@ -7,11 +7,12 @@ import java.util.Map;
 
 import org.locationtech.jts.geom.Geometry;
 
-import marmot.support.DataUtils;
+import utils.KeyValue;
 import utils.func.FOption;
-import utils.func.KeyValue;
 import utils.stream.FStream;
 import utils.stream.KVFStream;
+
+import marmot.support.DataUtils;
 
 
 /**
@@ -171,7 +172,7 @@ public interface Record {
 	public default Record setAll(Iterable<?> values) {
 		FStream.from(values)
 				.take(getRecordSchema().getColumnCount())
-				.zipWithIndex().forEach(t -> set(t._2, t._1));
+				.zipWithIndex().forEach(t -> set(t.index(), t.value()));
 		return this;
 	}
 	

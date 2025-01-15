@@ -16,9 +16,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
+import utils.Indexed;
 import utils.Utilities;
 import utils.func.FOption;
-import utils.func.Tuple;
 import utils.stream.FStream;
 import utils.stream.IntFStream;
 import utils.stream.KVFStream;
@@ -199,8 +199,8 @@ public class RecordSchema implements Serializable  {
 		Set<Integer> idxes = Sets.newHashSet(Ints.asList(colIdxes));
 		return FStream.of(m_columns)
 						.zipWithIndex()
-						.filter(t -> !idxes.contains(t._2))
-						.map(Tuple::_1)
+						.filter(t -> !idxes.contains(t.index()))
+						.map(Indexed::value)
 						.fold(RecordSchema.builder(), (b,c) -> b.addColumn(c))
 						.build();
 	}

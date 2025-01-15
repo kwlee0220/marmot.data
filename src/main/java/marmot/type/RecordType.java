@@ -71,7 +71,7 @@ public class RecordType extends DataType {
 		m_schema.streamColumns()
 				.map(Column::type)
 				.zipWithIndex()
-				.forEachOrThrow(t -> record.set(t._2, t._1.deserialize(ois)));
+				.forEachOrThrow(t -> record.set(t.index(), t.value().deserialize(ois)));
 		return record;
 	}
 	

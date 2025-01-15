@@ -101,7 +101,7 @@ public abstract class JdbcRecordAdaptor {
 								.append(prmKeyStr)
 								.append(")")
 								.toString();
-		m_jdbc.executeQuery(sqlStr);
+		m_jdbc.executeQuery(sqlStr, true);
 	}
 	
 	public void deleteTable(String tblName) throws SQLException {
