@@ -14,9 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
-import marmot.proto.DownMessage;
-import marmot.proto.ErrorProto.Code;
-import marmot.proto.UpMessage;
+
 import utils.StopWatch;
 import utils.Throwables;
 import utils.UnitUtils;
@@ -24,6 +22,10 @@ import utils.async.Guard;
 import utils.func.FOption;
 import utils.grpc.PBUtils;
 import utils.grpc.stream.server.StreamUploadReceiver;
+
+import marmot.proto.DownMessage;
+import marmot.proto.ErrorProto.Code;
+import marmot.proto.UpMessage;
 
 /**
  * 
@@ -222,7 +224,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 					default: throw new AssertionError();
 				}
 				
-				m_guard.await();
+				m_guard.awaitInGuard();
 			}
 		}
 		finally {
@@ -234,7 +236,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 		Date due = new Date(System.currentTimeMillis() + DEFAULT_CLOSE_TIMEOUT);
 		try {
 			while ( m_result == null && !(m_state == State.CANCELLED || m_state == State.FAILED) ) {
-				if ( !m_guard.awaitUntil(due) ) {
+				if ( !m_guard.awaitInGuardUntil(due) ) {
 					throw new TimeoutException();
 				}
 			}
@@ -247,7 +249,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 			m_cause = new CancellationException();
 			
 			m_state = State.CANCELLED;
-			m_guard.signalAll();
+			m_guard.signalAllInGuard();
 		}
 		catch ( Exception e ) {
 			m_channel.onNext(UpMessage.newBuilder().setError(PBUtils.ERROR(e)).build());
@@ -255,7 +257,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 			m_cause = e;
 			
 			m_state = State.FAILED;
-			m_guard.signalAll();
+			m_guard.signalAllInGuard();
 		}
 	}
 	
@@ -270,7 +272,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 		try {
 			Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 			while ( mayOverflow() && m_result == null ) {
-				if ( !m_guard.awaitUntil(due) ) {
+				if ( !m_guard.awaitInGuardUntil(due) ) {
 					throw new IOException("uploader receiver is too slow");
 				}
 			}

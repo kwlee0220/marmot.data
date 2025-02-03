@@ -121,7 +121,7 @@ public abstract class StreamUploadReceiver implements StreamObserver<UpMessage> 
 				m_streamConsumer.start();
 				
 				m_state = State.UPLOADING;
-				m_guard.signalAll();
+				m_guard.signalAllInGuard();
 			}
 		});
 	}
@@ -155,7 +155,7 @@ public abstract class StreamUploadReceiver implements StreamObserver<UpMessage> 
 			m_channel.onCompleted();
 			
 			m_state = State.CANCELLED;
-			m_guard.signalAll();
+			m_guard.signalAllInGuard();
 			s_logger.info("CANCELLED by the stream consumer");
 			
 			m_streamConsumer.cancel(true);
@@ -177,7 +177,7 @@ public abstract class StreamUploadReceiver implements StreamObserver<UpMessage> 
 				m_stream.endOfSupply();
 				
 				m_state = State.UPLOAD_FINISHED;
-				m_guard.signalAll();
+				m_guard.signalAllInGuard();
 			}
 		});
 	}

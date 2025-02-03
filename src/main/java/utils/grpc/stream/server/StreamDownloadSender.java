@@ -17,8 +17,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
-import marmot.proto.DownMessage;
-import marmot.proto.UpMessage;
+
 import utils.StopWatch;
 import utils.Throwables;
 import utils.UnitUtils;
@@ -28,6 +27,9 @@ import utils.grpc.PBUtils;
 import utils.grpc.stream.client.StreamUploadSender;
 import utils.io.IOUtils;
 import utils.io.LimitedInputStream;
+
+import marmot.proto.DownMessage;
+import marmot.proto.UpMessage;
 
 /**
  * 
@@ -105,7 +107,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 			m_startLatch.countDown();
 			m_stream = stream;
 			m_state = State.DOWNLOADING;
-			m_guard.signalAll();
+			m_guard.signalAllInGuard();
 		}
 		finally {
 			m_guard.unlock();
@@ -178,7 +180,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 						DownMessage eos = DownMessage.newBuilder().setEos(PBUtils.VOID()).build();
 						m_channel.onNext(eos);
 						m_state = State.END_OF_STREAM;
-						m_guard.signalAll();
+						m_guard.signalAllInGuard();
 
 						Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 						while ( m_offsetHead > m_offsetTail && m_state == State.END_OF_STREAM ) {
@@ -186,7 +188,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 								s_logger.trace("wait for synchronized finish: {} - {} = {}",
 												m_offsetHead, m_offsetTail, (m_offsetHead-m_offsetTail));
 							}
-							if ( !m_guard.awaitUntil(due) ) {
+							if ( !m_guard.awaitInGuardUntil(due) ) {
 								s_logger.info("timeout while wait foring synchronized finish");
 								break;
 							}
@@ -196,7 +198,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 						m_watch.stop();
 
 						m_channel.onCompleted();
-						m_guard.signalAll();
+						m_guard.signalAllInGuard();
 						if ( s_logger.isInfoEnabled() ) {
 							double velo = (m_offsetHead / (m_watch.getElapsedInMillis() / 1000f));
 							String veloStr = UnitUtils.toByteSizeString(Math.round(velo));
@@ -210,7 +212,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 					Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 					while ( mayOverflow() && m_state == State.DOWNLOADING ) {
 						s_logger.debug("suspend while the receiver finishes the incoming data");
-						if ( !m_guard.awaitUntil(due) ) {
+						if ( !m_guard.awaitInGuardUntil(due) ) {
 							throw new IOException("download receiver is too slow");
 						}
 					}
