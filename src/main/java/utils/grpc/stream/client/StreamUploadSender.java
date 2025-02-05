@@ -123,7 +123,7 @@ public class StreamUploadSender extends AbstractThreadedExecution<ByteString>
 					while ( mayOverflow() && m_state == State.UPLOADING && m_result == null ) {
 						// 보내고자하는 데이터가 더 남아있지만, upload된 데이터를
 						// 서버측에서의 처리를 따라오지 못한 경우
-						if ( !m_guard.awaitInGuardUntil(due) ) {
+						if ( !m_guard.awaitUntilInGuard(due) ) {
 							throw new IOException("uploader receiver is too slow");
 						}
 					}
@@ -259,7 +259,7 @@ public class StreamUploadSender extends AbstractThreadedExecution<ByteString>
 		Date due = new Date(System.currentTimeMillis() + DEFAULT_CLOSE_TIMEOUT);
 		try {
 			while ( m_result == null && !(m_state == State.CANCELLED || m_state == State.FAILED) ) {
-				if ( !m_guard.awaitInGuardUntil(due) ) {
+				if ( !m_guard.awaitUntilInGuard(due) ) {
 					throw new TimeoutException();
 				}
 			}

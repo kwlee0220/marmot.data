@@ -5,8 +5,6 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -15,13 +13,15 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
+import utils.Throwables;
+import utils.Utilities;
+import utils.async.Guard;
+import utils.async.GuardedRunnable;
+
 import marmot.Record;
 import marmot.RecordSchema;
 import marmot.RecordStreamClosedException;
 import marmot.RecordStreamException;
-import utils.Throwables;
-import utils.Utilities;
-import utils.async.Guard;
 
 
 /**
@@ -48,14 +48,12 @@ public class PipedRecordStream extends AbstractRecordStream {
 	private long m_supplierTimeout = DEFAULT_TIMEOUT_MILLIS;
 	private long m_consumerTimeout = DEFAULT_TIMEOUT_MILLIS;
 	
-	private final ReentrantLock m_lock = new ReentrantLock();
-	private final Condition m_cond = m_lock.newCondition();
-	private final Guard m_guard = Guard.by(m_lock, m_cond);
-	@GuardedBy("m_lock") private State m_state = State.OPEN;
-	@GuardedBy("m_lock") private Throwable m_failure = null;
-	@GuardedBy("m_lock") private final Queue<Record> m_queue;
-	@GuardedBy("m_lock") private long m_lastSupplyMillis;
-	@GuardedBy("m_lock") private long m_lastConsumeMillis;
+	private final Guard m_guard = Guard.create();
+	@GuardedBy("m_guard") private State m_state = State.OPEN;
+	@GuardedBy("m_guard") private Throwable m_failure = null;
+	@GuardedBy("m_guard") private final Queue<Record> m_queue;
+	@GuardedBy("m_guard") private long m_lastSupplyMillis;
+	@GuardedBy("m_guard") private long m_lastConsumeMillis;
 	
 	public PipedRecordStream(RecordSchema schema, int queueLength) {
 		Utilities.checkNotNullArgument(schema, "schema is null");
@@ -84,42 +82,42 @@ public class PipedRecordStream extends AbstractRecordStream {
 	}
 	
 	public boolean isConsumerClosed() {
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			return m_state == State.CONSUMER_CLOSED || m_state == State.CLOSED;
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 	
 	public boolean isSupplierClosed() {
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			return m_state == State.SUPPLIER_CLOSED || m_state == State.CLOSED;
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 	
 	public boolean isSupplierTimeout() {
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			return (System.currentTimeMillis() - m_lastSupplyMillis) > m_supplierTimeout; 
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 	
 	public boolean isConsumerTimeout() {
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			return (System.currentTimeMillis() - m_lastConsumeMillis) > m_consumerTimeout; 
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 	
@@ -149,23 +147,23 @@ public class PipedRecordStream extends AbstractRecordStream {
 	
 	@Override
 	protected void closeInGuard() {
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			switch ( m_state ) {
 				case OPEN:
 					m_state = State.CONSUMER_CLOSED;
-					m_cond.signalAll();
+					m_guard.signalAllInGuard();
 					break;
 				case SUPPLIER_CLOSED:
 					m_state = State.CLOSED;
-					m_cond.signalAll();
+					m_guard.signalAllInGuard();
 					break;
 				default:
 					break;
 			}
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 	
@@ -178,7 +176,7 @@ public class PipedRecordStream extends AbstractRecordStream {
 	public Record nextCopy() {
 		checkNotClosed();
 		
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			Date due = new Date(m_lastSupplyMillis + m_supplierTimeout);
 			while ( true ) {
@@ -199,7 +197,7 @@ public class PipedRecordStream extends AbstractRecordStream {
 				Record record = m_queue.poll();
 				if ( record != null ) {
 					m_lastConsumeMillis = System.currentTimeMillis();
-					m_cond.signalAll();
+					m_guard.signalAllInGuard();
 					
 					return record;
 				}
@@ -207,7 +205,7 @@ public class PipedRecordStream extends AbstractRecordStream {
 					throw new NoSuchElementException();
 				}
 				
-				if ( !m_cond.awaitUntil(due) ) {
+				if ( !m_guard.awaitUntilInGuard(due) ) {
 					throw new RecordStreamTimeoutException("PipedRecordSet supplier is too slow");
 				}
 			}
@@ -216,12 +214,12 @@ public class PipedRecordStream extends AbstractRecordStream {
 			throw new RecordStreamException("" + e);
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 
 	public boolean supply(Record record) {
-		m_lock.lock();
+		m_guard.lock();
 		try {
 			Date due = new Date(m_lastConsumeMillis + m_consumerTimeout);
 			while ( true ) {
@@ -232,10 +230,10 @@ public class PipedRecordStream extends AbstractRecordStream {
 							getLogger().debug("append a record: {}/{}",
 												m_queue.size(), m_maxQueueLength);
 							
-							m_cond.signalAll();
+							m_guard.signalAllInGuard();
 							return true;
 						}
-						if ( !m_cond.awaitUntil(due) ) {
+						if ( !m_guard.awaitUntilInGuard(due) ) {
 							throw new RecordStreamTimeoutException("PipedRecordSet consumer is too slow");
 						}
 						break;
@@ -252,12 +250,12 @@ public class PipedRecordStream extends AbstractRecordStream {
 			throw new RecordStreamException("" + e);
 		}
 		finally {
-			m_lock.unlock();
+			m_guard.unlock();
 		}
 	}
 	
 	public void endOfSupply() {
-		m_guard.tryToRun(() -> {
+		GuardedRunnable.from(m_guard, () -> {
 			switch ( m_state ) {
 				case OPEN:
 					m_state = State.SUPPLIER_CLOSED;
@@ -268,12 +266,11 @@ public class PipedRecordStream extends AbstractRecordStream {
 				default:
 					throw new IllegalStateException("unexpected state: state=" + m_state);
 			}
-			m_cond.signalAll();
-		}).get();
+		}).run();
 	}
 	
 	public void endOfSupply(Throwable failure) {
-		m_guard.tryToRun(() -> {
+		GuardedRunnable.from(m_guard, () -> {
 			switch ( m_state ) {
 				case OPEN:
 					m_state = State.SUPPLIER_CLOSED;
@@ -286,8 +283,8 @@ public class PipedRecordStream extends AbstractRecordStream {
 				default:
 					throw new IllegalStateException("unexpected state: state=" + m_state);
 			}
-			m_cond.signalAll();
-		}).get();
+			m_guard.signalAllInGuard();
+		}).run();
 	}
 	
 	public void waitForFullyClosed() throws InterruptedException {

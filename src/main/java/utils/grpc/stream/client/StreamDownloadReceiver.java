@@ -12,18 +12,21 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
-import marmot.proto.DownMessage;
-import marmot.proto.ErrorProto;
-import marmot.proto.ErrorProto.Code;
-import marmot.proto.UpMessage;
+
 import utils.UnitUtils;
 import utils.Utilities;
 import utils.async.EventDrivenExecution;
 import utils.async.Guard;
+import utils.async.GuardedRunnable;
 import utils.grpc.PBUtils;
 import utils.grpc.stream.server.StreamUploadReceiver;
 import utils.io.StreamClosedException;
 import utils.io.SuppliableInputStream;
+
+import marmot.proto.DownMessage;
+import marmot.proto.ErrorProto;
+import marmot.proto.ErrorProto.Code;
+import marmot.proto.UpMessage;
 
 
 /**
@@ -73,7 +76,7 @@ public class StreamDownloadReceiver	extends EventDrivenExecution<Void>
 	public void start(StreamObserver<UpMessage> channel) throws Throwable {
 		Utilities.checkNotNullArgument(channel, "upward channel");
 		
-		m_guard.runOrThrow(() -> {
+		GuardedRunnable.from(m_guard, () -> {
 			if ( m_state == State.NOT_STARTED ) {
 				m_channel = channel;
 				
@@ -88,25 +91,24 @@ public class StreamDownloadReceiver	extends EventDrivenExecution<Void>
 			else {
 				throw new IllegalStateException("already started: state=" + m_state);
 			}
-		});
+		}).run();
 	}
 
 	public void start(ByteString req, StreamObserver<UpMessage> channel) {
 		Utilities.checkNotNullArgument(req, "download initiation message");
 		Utilities.checkNotNullArgument(channel, "out-going channel");
 		
-		m_guard.runOrThrow(() -> {
+		GuardedRunnable.from(m_guard, () -> {
 			if ( m_state == State.NOT_STARTED ) {
 				m_channel = channel;
 				m_channel.onNext(UpMessage.newBuilder().setHeader(req).build());
 				m_state = State.DOWNLOADING;
 				m_guard.signalAllInGuard();
 				notifyStarted();
-			}
-			else {
+			} else {
 				throw new IllegalStateException("already started: state=" + m_state);
 			}
-		});
+		}).run();
 	}
 
 	@Override

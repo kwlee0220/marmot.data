@@ -188,7 +188,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 								s_logger.trace("wait for synchronized finish: {} - {} = {}",
 												m_offsetHead, m_offsetTail, (m_offsetHead-m_offsetTail));
 							}
-							if ( !m_guard.awaitInGuardUntil(due) ) {
+							if ( !m_guard.awaitUntilInGuard(due) ) {
 								s_logger.info("timeout while wait foring synchronized finish");
 								break;
 							}
@@ -212,7 +212,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 					Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 					while ( mayOverflow() && m_state == State.DOWNLOADING ) {
 						s_logger.debug("suspend while the receiver finishes the incoming data");
-						if ( !m_guard.awaitInGuardUntil(due) ) {
+						if ( !m_guard.awaitUntilInGuard(due) ) {
 							throw new IOException("download receiver is too slow");
 						}
 					}
