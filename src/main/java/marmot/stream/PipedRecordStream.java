@@ -16,7 +16,6 @@ import com.google.common.base.Preconditions;
 import utils.Throwables;
 import utils.Utilities;
 import utils.async.Guard;
-import utils.async.GuardedRunnable;
 
 import marmot.Record;
 import marmot.RecordSchema;
@@ -152,11 +151,11 @@ public class PipedRecordStream extends AbstractRecordStream {
 			switch ( m_state ) {
 				case OPEN:
 					m_state = State.CONSUMER_CLOSED;
-					m_guard.signalAllInGuard();
+					m_guard.signalAll();
 					break;
 				case SUPPLIER_CLOSED:
 					m_state = State.CLOSED;
-					m_guard.signalAllInGuard();
+					m_guard.signalAll();
 					break;
 				default:
 					break;
@@ -197,7 +196,7 @@ public class PipedRecordStream extends AbstractRecordStream {
 				Record record = m_queue.poll();
 				if ( record != null ) {
 					m_lastConsumeMillis = System.currentTimeMillis();
-					m_guard.signalAllInGuard();
+					m_guard.signalAll();
 					
 					return record;
 				}
@@ -205,7 +204,7 @@ public class PipedRecordStream extends AbstractRecordStream {
 					throw new NoSuchElementException();
 				}
 				
-				if ( !m_guard.awaitUntilInGuard(due) ) {
+				if ( !m_guard.awaitSignal(due) ) {
 					throw new RecordStreamTimeoutException("PipedRecordSet supplier is too slow");
 				}
 			}
@@ -230,10 +229,10 @@ public class PipedRecordStream extends AbstractRecordStream {
 							getLogger().debug("append a record: {}/{}",
 												m_queue.size(), m_maxQueueLength);
 							
-							m_guard.signalAllInGuard();
+							m_guard.signalAll();
 							return true;
 						}
-						if ( !m_guard.awaitUntilInGuard(due) ) {
+						if ( !m_guard.awaitSignal(due) ) {
 							throw new RecordStreamTimeoutException("PipedRecordSet consumer is too slow");
 						}
 						break;
@@ -255,7 +254,7 @@ public class PipedRecordStream extends AbstractRecordStream {
 	}
 	
 	public void endOfSupply() {
-		GuardedRunnable.from(m_guard, () -> {
+		m_guard.run(() -> {
 			switch ( m_state ) {
 				case OPEN:
 					m_state = State.SUPPLIER_CLOSED;
@@ -266,11 +265,11 @@ public class PipedRecordStream extends AbstractRecordStream {
 				default:
 					throw new IllegalStateException("unexpected state: state=" + m_state);
 			}
-		}).run();
+		});
 	}
 	
 	public void endOfSupply(Throwable failure) {
-		GuardedRunnable.from(m_guard, () -> {
+		m_guard.run(() -> {
 			switch ( m_state ) {
 				case OPEN:
 					m_state = State.SUPPLIER_CLOSED;
@@ -283,16 +282,16 @@ public class PipedRecordStream extends AbstractRecordStream {
 				default:
 					throw new IllegalStateException("unexpected state: state=" + m_state);
 			}
-			m_guard.signalAllInGuard();
-		}).run();
+			m_guard.signalAll();
+		});
 	}
 	
 	public void waitForFullyClosed() throws InterruptedException {
-		m_guard.awaitUntil(() -> m_state == State.CLOSED);
+		m_guard.awaitCondition(() -> m_state == State.CLOSED).andReturn();
 	}
 	
 	public boolean waitForFullyClosed(long timeout, TimeUnit unit) throws InterruptedException {
-		return m_guard.awaitUntil(() -> m_state == State.CLOSED, timeout, unit);
+		return m_guard.awaitCondition(() -> m_state == State.CLOSED, timeout, unit).andReturn();
 	}
 	
 	@Override

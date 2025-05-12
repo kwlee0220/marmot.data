@@ -10,7 +10,7 @@ import org.locationtech.jts.geom.Geometry;
 import utils.KeyValue;
 import utils.func.FOption;
 import utils.stream.FStream;
-import utils.stream.KVFStream;
+import utils.stream.KeyValueFStream;
 
 import marmot.support.DataUtils;
 
@@ -85,8 +85,8 @@ public interface Record {
 		return new RecordMap(this);
 	}
 	
-	public default KVFStream<String,Object> fstream() {
-		return new KVFStream<String, Object>() {
+	public default KeyValueFStream<String,Object> fstream() {
+		return new KeyValueFStream<String, Object>() {
 			private final RecordSchema m_schema = getRecordSchema();
 			private int m_idx = 0;
 
@@ -155,10 +155,10 @@ public interface Record {
 	 * @return	갱신된 레코드 객체.
 	 */
 	public default Record set(Map<String, Object> values) {
-		KVFStream.from(values)
-				.mapKey(key -> getRecordSchema().findColumn(key).map(Column::ordinal).getOrElse(-1))
-				.filterKey(idx -> idx >= 0)
-				.forEach(kv -> set(kv.key(), kv.value()));
+		KeyValueFStream.from(values)
+						.mapKey(key -> getRecordSchema().findColumn(key).map(Column::ordinal).getOrElse(-1))
+						.filterKey(idx -> idx >= 0)
+						.forEach(kv -> set(kv.key(), kv.value()));
 		return this;
 	}
 	

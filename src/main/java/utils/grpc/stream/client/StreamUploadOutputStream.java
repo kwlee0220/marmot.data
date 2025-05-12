@@ -64,7 +64,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 	public void setOutgoingChannel(StreamObserver<UpMessage> channel) {
 		m_channel = channel;
 		
-		m_guard.runAndSignalAll(() -> {
+		m_guard.run(() -> {
 			s_logger.trace("send HEADER: {}", m_header);
 			UpMessage req = UpMessage.newBuilder().setHeader(m_header).build();
 			m_channel.onNext(req);
@@ -133,10 +133,10 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 				// peer로부터 upload 결과가 도착한 경우.
 				ByteString result = resp.getResult();
 				s_logger.trace("received RESULT: {}", result);
-				m_guard.runAndSignalAll(() -> m_result = result);
+				m_guard.run(() -> m_result = result);
 				break;
 			case OFFSET:
-				m_guard.runAndSignalAll(() -> {
+				m_guard.run(() -> {
 					m_offsetTail = resp.getOffset();
 				});
 				break;
@@ -166,7 +166,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 	}
 	
 	private void handleRemoteException(Throwable cause) {
-		m_guard.runAndSignalAll(() -> {
+		m_guard.run(() -> {
 			if ( m_state == State.CANCELLED || m_state == State.FAILED || m_result != null ) {
 				return;
 			}
@@ -224,7 +224,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 					default: throw new AssertionError();
 				}
 				
-				m_guard.awaitInGuard();
+				m_guard.awaitSignal();
 			}
 		}
 		finally {
@@ -236,7 +236,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 		Date due = new Date(System.currentTimeMillis() + DEFAULT_CLOSE_TIMEOUT);
 		try {
 			while ( m_result == null && !(m_state == State.CANCELLED || m_state == State.FAILED) ) {
-				if ( !m_guard.awaitUntilInGuard(due) ) {
+				if ( !m_guard.awaitSignal(due) ) {
 					throw new TimeoutException();
 				}
 			}
@@ -249,7 +249,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 			m_cause = new CancellationException();
 			
 			m_state = State.CANCELLED;
-			m_guard.signalAllInGuard();
+			m_guard.signalAll();
 		}
 		catch ( Exception e ) {
 			m_channel.onNext(UpMessage.newBuilder().setError(PBUtils.ERROR(e)).build());
@@ -257,7 +257,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 			m_cause = e;
 			
 			m_state = State.FAILED;
-			m_guard.signalAllInGuard();
+			m_guard.signalAll();
 		}
 	}
 	
@@ -272,7 +272,7 @@ public class StreamUploadOutputStream extends OutputStream implements StreamObse
 		try {
 			Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 			while ( mayOverflow() && m_result == null ) {
-				if ( !m_guard.awaitUntilInGuard(due) ) {
+				if ( !m_guard.awaitSignal(due) ) {
 					throw new IOException("uploader receiver is too slow");
 				}
 			}

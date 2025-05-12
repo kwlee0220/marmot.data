@@ -2,9 +2,10 @@ package marmot;
 
 import java.util.concurrent.CompletableFuture;
 
-import marmot.stream.PipedRecordStream;
 import utils.Throwables;
 import utils.async.Guard;
+
+import marmot.stream.PipedRecordStream;
 
 /**
  * 

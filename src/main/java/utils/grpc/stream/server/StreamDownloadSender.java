@@ -107,7 +107,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 			m_startLatch.countDown();
 			m_stream = stream;
 			m_state = State.DOWNLOADING;
-			m_guard.signalAllInGuard();
+			m_guard.signalAll();
 		}
 		finally {
 			m_guard.unlock();
@@ -180,7 +180,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 						DownMessage eos = DownMessage.newBuilder().setEos(PBUtils.VOID()).build();
 						m_channel.onNext(eos);
 						m_state = State.END_OF_STREAM;
-						m_guard.signalAllInGuard();
+						m_guard.signalAll();
 
 						Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 						while ( m_offsetHead > m_offsetTail && m_state == State.END_OF_STREAM ) {
@@ -188,7 +188,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 								s_logger.trace("wait for synchronized finish: {} - {} = {}",
 												m_offsetHead, m_offsetTail, (m_offsetHead-m_offsetTail));
 							}
-							if ( !m_guard.awaitUntilInGuard(due) ) {
+							if ( !m_guard.awaitSignal(due) ) {
 								s_logger.info("timeout while wait foring synchronized finish");
 								break;
 							}
@@ -198,7 +198,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 						m_watch.stop();
 
 						m_channel.onCompleted();
-						m_guard.signalAllInGuard();
+						m_guard.signalAll();
 						if ( s_logger.isInfoEnabled() ) {
 							double velo = (m_offsetHead / (m_watch.getElapsedInMillis() / 1000f));
 							String veloStr = UnitUtils.toByteSizeString(Math.round(velo));
@@ -212,7 +212,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 					Date due = new Date(System.currentTimeMillis() + MAX_WAIT_TIMEOUT);
 					while ( mayOverflow() && m_state == State.DOWNLOADING ) {
 						s_logger.debug("suspend while the receiver finishes the incoming data");
-						if ( !m_guard.awaitUntilInGuard(due) ) {
+						if ( !m_guard.awaitSignal(due) ) {
 							throw new IOException("download receiver is too slow");
 						}
 					}
@@ -273,7 +273,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 				m_startLatch.countDown();
 				break;
 			case OFFSET:
-				m_guard.runAndSignalAll(() -> {
+				m_guard.run(() -> {
 					m_offsetTail = msg.getOffset();
 				});
 				if ( s_logger.isTraceEnabled() ) {
@@ -337,7 +337,7 @@ public class StreamDownloadSender implements Runnable, StreamObserver<UpMessage>
 	}
 	
 	private void runIfDownloading(Runnable action) {
-		m_guard.runAndSignalAll(() -> {
+		m_guard.run(() -> {
 			if ( m_state == State.DOWNLOADING || m_state == State.WAIT_STREAM ) {
 				action.run();
 			}

@@ -21,7 +21,7 @@ import utils.Utilities;
 import utils.func.FOption;
 import utils.stream.FStream;
 import utils.stream.IntFStream;
-import utils.stream.KVFStream;
+import utils.stream.KeyValueFStream;
 
 import marmot.support.TypeParser;
 import marmot.type.DataType;
@@ -415,10 +415,10 @@ public class RecordSchema implements Serializable  {
 			
 			LinkedHashMap<String, Column> old = m_columns;
 			m_columns = new LinkedHashMap<>(old.size());
-			KVFStream.from(old)
-					.filterKey(k -> !k.equals(colName))
-					.toValueStream()
-					.forEach(this::addColumn);
+			KeyValueFStream.from(old)
+							.filterKey(k -> !k.equals(colName))
+							.values()
+							.forEach(this::addColumn);
 			
 			return this;
 		}

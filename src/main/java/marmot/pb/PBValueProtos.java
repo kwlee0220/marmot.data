@@ -13,7 +13,7 @@ import com.google.protobuf.ByteString;
 import utils.LocalDateTimes;
 import utils.LocalDates;
 import utils.LocalTimes;
-import utils.func.Tuple;
+import utils.Tuple;
 
 import marmot.Record;
 import marmot.RecordSchema;

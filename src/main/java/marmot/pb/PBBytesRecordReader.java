@@ -4,9 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import utils.Tuple;
+
 import marmot.RecordSchema;
 import marmot.proto.StringProto;
-import utils.func.Tuple;
 
 
 /**

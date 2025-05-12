@@ -15,7 +15,8 @@ import marmot.RecordStreamException;
 import marmot.dataset.DataSetException;
 import marmot.proto.RecordProto;
 import marmot.stream.AbstractRecordStream;
-import utils.func.Tuple;
+
+import utils.Tuple;
 import utils.io.IOUtils;
 
 /**

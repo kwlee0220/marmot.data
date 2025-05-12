@@ -12,6 +12,11 @@ import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+
+import utils.CSV;
+import utils.Throwables;
+import utils.func.CheckedRunnable;
+
 import marmot.proto.BoolProto;
 import marmot.proto.BoolResponse;
 import marmot.proto.DownMessage;
@@ -26,9 +31,6 @@ import marmot.proto.StringResponse;
 import marmot.proto.UpMessage;
 import marmot.proto.VoidProto;
 import marmot.proto.VoidResponse;
-import utils.CSV;
-import utils.Throwables;
-import utils.func.CheckedRunnable;
 
 /**
  * 
@@ -399,7 +401,7 @@ public class PBUtils {
 	@SuppressWarnings("unchecked")
 	public static <T> FOption<T> getOptionField(Message proto, String field) {
 		try {
-			return FOption.ofNullable((T)KVFStream.from(proto.getAllFields())
+			return FOption.ofNullable((T)FStream.from(proto.getAllFields())
 												.filter(kv -> kv.key().getName().equals(field))
 												.next()
 												.map(kv -> kv.value())
@@ -429,7 +431,7 @@ public class PBUtils {
 	@SuppressWarnings("unchecked")
 	public static <T> T getField(Message proto, String field) {
 		try {
-			return(T)KVFStream.from(proto.getAllFields())
+			return(T)FStream.from(proto.getAllFields())
 									.filter(kv -> kv.key().getName().equals(field))
 									.next()
 									.map(kv -> kv.value())
@@ -858,7 +860,7 @@ public class PBUtils {
 	}
 	
 	public static PropertiesProto toProto(Map<String,String> metadata) {
-		List<PropertyProto> properties = KVFStream.from(metadata)
+		List<PropertyProto> properties = FStream.from(metadata)
 												.map(kv -> PropertyProto.newBuilder()
 																		.setKey(kv.key())
 																		.setValue(kv.value())
@@ -901,7 +903,7 @@ public class PBUtils {
 	}
 	
 	public static KeyValueMapProto toKeyValueMapProto(Map<String,Object> keyValueMap) {
-		List<KeyValueProto> keyValues = KVFStream.from(keyValueMap)
+		List<KeyValueProto> keyValues = FStream.from(keyValueMap)
 												.map(kv -> KeyValueProto.newBuilder()
 																	.setKey(kv.key())
 																	.setValue(toValueProto(kv.value()))

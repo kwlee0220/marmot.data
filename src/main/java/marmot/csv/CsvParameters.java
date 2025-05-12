@@ -14,10 +14,11 @@ import org.apache.commons.csv.CSVRecord;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+
+import utils.Tuple;
+import utils.Tuple4;
 import utils.Utilities;
 import utils.func.FOption;
-import utils.func.Tuple;
-import utils.func.Tuple4;
 
 /**
  * 

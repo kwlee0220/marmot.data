@@ -16,7 +16,7 @@ import com.google.common.collect.Multimap;
 import utils.KeyValue;
 import utils.func.FOption;
 import utils.stream.FStream;
-import utils.stream.KVFStream;
+import utils.stream.KeyValueFStream;
 
 import marmot.Record;
 import marmot.RecordReader;
@@ -62,20 +62,20 @@ public class AvroFileCatalog implements Catalog {
 
 	@Override
 	public List<DataSetInfo> getDataSetInfoAll() {
-		return FStream.from(m_byFolderMap.asMap())
-						.flatMap(kv -> FStream.from(kv.value()))
-						.map(DataSetInfo::duplicate)
-						.toList();
+		return KeyValueFStream.from(m_byFolderMap.asMap())
+								.flatMap(kv -> FStream.from(kv.value()))
+								.map(DataSetInfo::duplicate)
+								.toList();
 	}
 
 	@Override
 	public List<DataSetInfo> getDataSetInfoAllInDir(String keyFolder, boolean recursive) {
 		String prefix = Catalogs.normalize(keyFolder);
-		KVFStream<String, Collection<DataSetInfo>> strm = FStream.from(m_byFolderMap.asMap());
+		KeyValueFStream<String, Collection<DataSetInfo>> strm = KeyValueFStream.from(m_byFolderMap.asMap());
 		strm = ( recursive )
 				? strm.filterKey(folder -> folder.startsWith(prefix))
 				: strm.filterKey(folder -> folder.equals(prefix));
-		return strm.toValueStream()
+		return strm.values()
 					.flatMap(infos -> FStream.from(infos))
 					.toList();
 	}
@@ -83,9 +83,9 @@ public class AvroFileCatalog implements Catalog {
 	@Override
 	public boolean isDirectory(String id) {
 		String prefix = Catalogs.normalize(id);
-		return FStream.from(m_byFolderMap.asMap())
-						.filterKey(folder -> folder.startsWith(prefix))
-						.exists();
+		return KeyValueFStream.from(m_byFolderMap.asMap())
+								.filterKey(folder -> folder.startsWith(prefix))
+								.exists();
 	}
 
 	@Override
@@ -201,11 +201,11 @@ public class AvroFileCatalog implements Catalog {
 	@Override
 	public Set<String> getSubDirAll(String folder, boolean recursive) {
 		String prefix = Catalogs.normalize(folder);
-		KVFStream<String, Collection<DataSetInfo>> strm = FStream.from(m_byFolderMap.asMap());
+		KeyValueFStream<String, Collection<DataSetInfo>> strm = KeyValueFStream.from(m_byFolderMap.asMap());
 		strm = ( recursive )
 				? strm.filterKey(fdr -> fdr.startsWith(prefix))
 				: strm.filterKey(fdr -> fdr.equals(prefix));
-		return strm.toKeyStream().toSet();
+		return strm.keys().toSet();
 	}
 
 	@Override
@@ -214,10 +214,11 @@ public class AvroFileCatalog implements Catalog {
 
 		Multimap<String,DataSetInfo> old = m_byFolderMap;
 		m_byFolderMap = ArrayListMultimap.create();
-		m_byIdMap = FStream.from(m_byIdMap)
-							.filterKey(id -> !id.startsWith(prefix))
-							.peek(kv -> m_byFolderMap.put(getParentId(kv.key()), kv.value()))
-							.toMap(KeyValue::key, KeyValue::value);	
+		m_byIdMap = KeyValueFStream.from(m_byIdMap)
+									.filterKey(id -> !id.startsWith(prefix))
+									.peek(kv -> m_byFolderMap.put(getParentId(kv.key()), kv.value()))
+									.toKeyValueStream(KeyValue::key, KeyValue::value)
+									.toMap();	
 		int count = old.size() - m_byFolderMap.size();
 		save();
 		
@@ -235,19 +236,20 @@ public class AvroFileCatalog implements Catalog {
 		int prefixLen = prefix.length();
 
 		m_byFolderMap = ArrayListMultimap.create();
-		m_byIdMap = FStream.from(m_byIdMap)
-							.map(kv -> {
-								if ( kv.key().startsWith(prefix) ) {
-									String suffix = kv.key().substring(prefixLen);
-									String newId = newPrefix + Catalogs.ID_DELIM + suffix;
-									return kv.value().clone(newId);
-								}
-								else {
-									return kv.value();
-								}
-							})
-							.peek(info -> m_byFolderMap.put(getParentId(info.getId()), info))
-							.toMap(info -> info.getId());
+		m_byIdMap = KeyValueFStream.from(m_byIdMap)
+									.map(kv -> {
+										if ( kv.key().startsWith(prefix) ) {
+											String suffix = kv.key().substring(prefixLen);
+											String newId = newPrefix + Catalogs.ID_DELIM + suffix;
+											return kv.value().clone(newId);
+										}
+										else {
+											return kv.value();
+										}
+									})
+									.peek(info -> m_byFolderMap.put(getParentId(info.getId()), info))
+									.tagKey(info -> info.getId())
+									.toMap();
 		save();
 	}
 	
