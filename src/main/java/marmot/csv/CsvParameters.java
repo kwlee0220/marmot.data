@@ -27,16 +27,16 @@ import utils.func.FOption;
 @Command(description="CSV Parameters")
 public class CsvParameters {
 	private char m_delim = ',';
-	@Nullable private Character m_quote = null;
-	@Nullable private Character m_escape = null;
-	@Nullable private String m_comment = null;
+	private @Nullable Character m_quote = null;
+	private @Nullable Character m_escape = null;
+	private @Nullable String m_comment = null;
 	private Charset m_charset = StandardCharsets.UTF_8;
 	private boolean m_headerFirst = false;
-	@Nullable private String m_header = null;
-	@Nullable private String m_pointColsExpr = null;
-	@Nullable private Tuple4<String,String,String,String> m_pointCols = null;
+	private @Nullable String m_header = null;
+	private @Nullable String m_pointColsExpr = null;
+	private @Nullable Tuple4<String,String,String,String> m_pointCols = null;
 	private boolean m_trimColumns = false;
-	@Nullable private String m_nullValue = null;
+	private @Nullable String m_nullValue = null;
 	private boolean m_tiger = false;
 	
 	public static CsvParameters create() {

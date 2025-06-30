@@ -40,15 +40,15 @@ public abstract class RemoteMarmotCommand implements PicocliCommand<GrpcMarmotRu
 	@Mixin private UsageHelp m_help;
 
 	@Option(names={"--host", "-h"}, paramLabel="ip", description={"host ip"})
-	@Nullable private String m_host = null;
+	private @Nullable String m_host = null;
 
 	@Option(names={"--port", "-p"}, paramLabel="number", description={"host port number"})
-	@Nullable private int m_port = -1;
+	private @Nullable int m_port = -1;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	private boolean m_verbose = false;
 	
-	@Nullable private GrpcMarmotRuntimeProxy m_marmot;
+	private @Nullable GrpcMarmotRuntimeProxy m_marmot;
 	
 	protected abstract void run(GrpcMarmotRuntimeProxy marmot) throws Exception;
 

@@ -27,7 +27,7 @@ import utils.io.IOUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class SerializingRecordReader implements RecordReader {
-	@Nullable private RecordSchema m_schema;
+	private @Nullable RecordSchema m_schema;
 	
 	protected abstract Tuple<RecordSchema,ObjectInputStream> getInputStream() throws IOException;
 	
@@ -136,7 +136,7 @@ public abstract class SerializingRecordReader implements RecordReader {
 	}
 	
 	public static class BytesReader extends SerializingRecordReader {
-		@Nullable private byte[] m_bytes;
+		private @Nullable byte[] m_bytes;
 		
 		private BytesReader(byte[] bytes) {
 			m_bytes = bytes;

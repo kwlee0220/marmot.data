@@ -22,8 +22,8 @@ import marmot.stream.AbstractRecordStream;
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class AvroRecordReader implements RecordReader {
-	@Nullable private RecordSchema m_schema;
-	@Nullable private Schema m_avroSchema;
+	private @Nullable RecordSchema m_schema;
+	private @Nullable Schema m_avroSchema;
 	
 	protected abstract DataFileReader<GenericRecord> getFileReader() throws IOException;
 	

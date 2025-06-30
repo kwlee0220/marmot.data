@@ -14,7 +14,7 @@ import utils.func.FOption;
  */
 public class PeekableRecordStream extends AbstractRecordStream {
 	private final RecordStream m_input;
-	@Nullable private Record m_peeked = null;
+	private @Nullable Record m_peeked = null;
 	
 	public PeekableRecordStream(RecordStream input) {
 		Utilities.checkNotNullArgument(input, "Peeking RecordSet is null");

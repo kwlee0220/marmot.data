@@ -13,7 +13,7 @@ import utils.io.IOUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class ChainedRecordStream extends AbstractRecordStream {
-	@Nullable private RecordStream m_current = null;	// null이면 first-call 의미
+	private @Nullable RecordStream m_current = null;	// null이면 first-call 의미
 	private boolean m_eos = false;
 
 	/**

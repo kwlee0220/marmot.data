@@ -24,7 +24,7 @@ import utils.io.IOUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class PBRecordReader implements RecordReader {
-	@Nullable private RecordSchema m_schema;
+	private @Nullable RecordSchema m_schema;
 	
 	protected abstract Tuple<RecordSchema,InputStream> getInputStream() throws IOException;
 	

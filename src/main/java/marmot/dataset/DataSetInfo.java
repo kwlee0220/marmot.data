@@ -40,7 +40,7 @@ public final class DataSetInfo implements PBSerializable<DataSetInfoProto>, Seri
 	private final String m_id;
 	private final DataSetType m_type;
 	private final RecordSchema m_schema;
-	@Nullable private Envelope m_bounds;
+	private @Nullable Envelope m_bounds;
 	private long m_count = 0;
 	private String m_parameter;
 	private long m_updateEpochMillis;

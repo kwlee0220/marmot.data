@@ -35,8 +35,8 @@ public abstract class AvroRecordWriter implements RecordWriter, LoggerSettable {
 	private static final int DEFAULT_SYNC_INTERVAL = DataFileConstants.DEFAULT_SYNC_INTERVAL * 2;
 	private static final CodecFactory CODEC_FACT = CodecFactory.snappyCodec();
 	
-	@Nullable private Integer m_syncInterval = DEFAULT_SYNC_INTERVAL;
-	@Nullable private CodecFactory m_codec = CODEC_FACT;
+	private @Nullable Integer m_syncInterval = DEFAULT_SYNC_INTERVAL;
+	private @Nullable CodecFactory m_codec = CODEC_FACT;
 	private Logger m_logger = s_logger;
 	
 	protected abstract DataFileWriter<GenericRecord> getFileWriter() throws IOException;

@@ -28,7 +28,7 @@ public abstract class MultiSourcesRecordStream<T> extends ChainedRecordStream {
 	private final FStream<T> m_sources;
 	private final RecordSchema m_schema;
 	private RecordStream m_first;
-	@Nullable private T m_current;
+	private @Nullable T m_current;
 	private StopWatch m_watch;
 	
 	abstract protected RecordStream read(T source) throws RecordStreamException;

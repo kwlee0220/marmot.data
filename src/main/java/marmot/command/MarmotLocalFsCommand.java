@@ -47,11 +47,11 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 	
-	@Nullable private File m_homeDir = null;
-	@Nullable private File m_rootDir = DATASET_STORE_ROOT;
+	private @Nullable File m_homeDir = null;
+	private @Nullable File m_rootDir = DATASET_STORE_ROOT;
 
 	@Option(names={"--catalog"}, paramLabel="jdbc_str", description={"JDBC String"})
-	@Nullable private String m_catalogJdbcStr = CATALOG_JDBC;
+	private @Nullable String m_catalogJdbcStr = CATALOG_JDBC;
 	
 	@Option(names={"-v"}, description={"verbose"})
 	protected boolean m_verbose = false;
@@ -59,7 +59,7 @@ public abstract class MarmotLocalFsCommand implements PicocliCommand<MarmotLfsSe
 	@Option(names={"-f", "--format"}, description={"format"})
 	protected boolean m_format = false;
 	
-	@Nullable private MarmotLfsServer m_marmot;
+	private @Nullable MarmotLfsServer m_marmot;
 	
 	protected abstract void run(MarmotLfsServer marmot) throws Exception;
 

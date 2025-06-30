@@ -17,7 +17,7 @@ public class GeoJsonParameters {
 	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 	
 	private Charset m_charset = DEFAULT_CHARSET;
-	@Nullable private String m_gjsonSrid = null;
+	private @Nullable String m_gjsonSrid = null;
 	
 	public static GeoJsonParameters create() {
 		return new GeoJsonParameters();

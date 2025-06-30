@@ -83,7 +83,7 @@ public abstract class SerializingRecordWriter implements RecordWriter {
 	
 	public static class BytesWriter extends SerializingRecordWriter {
 		private final RecordSchema m_schema;
-		@Nullable private byte[] m_bytes;
+		private @Nullable byte[] m_bytes;
 		
 		private BytesWriter(RecordSchema schema) {
 			m_schema = schema;
